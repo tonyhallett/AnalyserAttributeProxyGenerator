@@ -16,7 +16,10 @@
 
         [Test]
         public void Should_Work_With_Parameter_Type_StringArray()
-            => Assert.That(GetFromProxiedCtor([new string[] { "a", "b", "c" }]), Is.EqualTo("a,b,c"));
+        {
+            string[] stringArrayArg = ["a", "b", "c"];
+            Assert.That(GetFromProxiedCtor([stringArrayArg]), Is.EqualTo("a,b,c"));
+        }
 
         private static string GetFromProxiedCtor(params object[] ctorArgs)
             => new Proxy().GetFromProxiedCtor(new ProxyAttributeData(ctorArgs));

@@ -14,7 +14,7 @@ namespace AnalyserAttributeProxyGenerator.IntegrationTests
     {
         public const string MockTypeSymbolName = "MockedTypeSymbol";
 
-        private static readonly ConstructorInfo s_primitiveConstructor;
+        private static readonly ConstructorInfo s_nonArrayConstructor;
         private static readonly ConstructorInfo s_arrayConstructor;
 
         private static readonly Dictionary<Type, string> s_typeAliases = new()
@@ -43,7 +43,7 @@ namespace AnalyserAttributeProxyGenerator.IntegrationTests
             MockedTypeSymbol = mockTypeSymbol.Object;
 
             ConstructorInfo[] ctors = typeof(TypedConstant).GetConstructors(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            s_primitiveConstructor = ctors.First(c => c.GetParameters().Length == 3);
+            s_nonArrayConstructor = ctors.First(c => c.GetParameters().Length == 3);
             s_arrayConstructor = ctors.First(c => c.GetParameters().Length == 2);
         }
 
@@ -88,7 +88,7 @@ namespace AnalyserAttributeProxyGenerator.IntegrationTests
             return CreatePrimitiveTypedConstant(value);
         }
 
-        private static TypedConstant CreatePrimitiveTypedConstant(object value) => (TypedConstant)s_primitiveConstructor.Invoke([null, TypedConstantKind.Primitive, value]);
+        private static TypedConstant CreatePrimitiveTypedConstant(object value) => (TypedConstant)s_nonArrayConstructor.Invoke([null, TypedConstantKind.Primitive, value]);
 
         private static IParameterSymbol GetParameterSymbol(string typeName)
         {

@@ -75,7 +75,7 @@ Encoding.UTF8));
                     }
 
                     string classSource =
-$$"""
+    $$"""
 {{staticKeyword}}partial class {{model.PartialClassName}}
 {
     private {{staticKeyword}}SeparatedSyntaxList<AttributeArgumentSyntax> arguments;
@@ -94,20 +94,23 @@ $$"""
         return invokers[overload](attributeData.ConstructorArguments.Select(GetValue).ToArray());
     }
 
-    private {{staticKeyword}} object GetValue(TypedConstant typedConstant)
+    private {{staticKeyword}}object GetValue(TypedConstant typedConstant)
     {
-        if(typedConstant.Kind == TypedConstantKind.Array)
+        if (typedConstant.Kind == TypedConstantKind.Array)
         {
             return typedConstant.Values.Select(GetValue).ToArray();
         }
 
         return typedConstant.Value;
     }
+
+    private {{staticKeyword}} T[] GetArray<T>(object array)
+        => ((object[])array).Cast<T>().ToArray();
 }
 """;
                     string namespaceSource = string.IsNullOrEmpty(model.PartialNamespaceName) ? string.Empty : $"namespace {model.PartialNamespaceName};";
                     string source =
-$$"""
+    $$"""
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -127,7 +130,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
                             constructorParameters,
                             (sb, pType, _, parameter) => sb.Append($"{pType} {parameter.Name}"));
                         return
-$$"""
+    $$"""
     private {{staticKeyword}}partial {{model.ReturnType}} {{generatedMethodName}}({{sb}});
 
 """;
@@ -139,8 +142,19 @@ $$"""
                         return StringBuilderCommon(
                             $"           {{\"{lookupKey}\", values => {generatedMethodName}(",
                             constructorParameters,
-                            (sb, pType, i, _) => sb.Append($"({pType})values[{i}]"))
-                        .Append(")},").ToString();
+                            (sb, pType, i, _) =>
+                            {
+                                string prefix = $"({pType})";
+                                string suffix = string.Empty;
+                                if (pType.EndsWith("[]", StringComparison.InvariantCulture))
+                                {
+                                    prefix = $"GetArray<{pType[..^2]}>(";
+                                    suffix = ")";
+                                }
+
+                                sb.Append($"{prefix}values[{i}]{suffix}");
+                            })
+                            .Append(")},").ToString();
                     }
 
                     StringBuilder StringBuilderCommon(

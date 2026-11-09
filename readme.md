@@ -12,9 +12,6 @@ e.g with return type string
 Given an attribute
 
 ```C#
-    [AttributeUsage(AttributeTargets.All)]
-    internal class AnAttribute : Attribute
-    {
         public AnAttribute(int i, string str, bool b)
         {
         }
@@ -22,7 +19,20 @@ Given an attribute
         public AnAttribute(Type type)
         {
         }
-    }
+
+        public AnAttribute(AnEnum anEnum)
+        {
+        }
+
+        public AnAttribute(string[] strings)
+        {
+        }
+
+        public enum AnEnum
+        {
+            One = 0,
+            Two = 1,
+        }
 
 ```
 
@@ -55,6 +65,10 @@ partial class Proxy
 
     private partial string GetFromProxiedCtor(ITypeSymbol type);
 
+    private partial string GetFromProxiedCtor(AnalyserAttributeProxyGenerator.IntegrationTests.AnAttribute.AnEnum anEnum);
+
+    private partial string GetFromProxiedCtor(string[] strings);
+
     public string GetFromProxiedCtor(AttributeData attributeData)
     {
         var attribute = (AttributeSyntax)attributeData.ApplicationSyntaxReference.GetSyntax();
@@ -65,11 +79,28 @@ partial class Proxy
         {
            {"int,string,bool", values => GetFromProxiedCtor((int)values[0], (string)values[1], (bool)values[2])},
            {"System.Type", values => GetFromProxiedCtor((ITypeSymbol)values[0])},
+           {"AnalyserAttributeProxyGenerator.IntegrationTests.AnAttribute.AnEnum", values => GetFromProxiedCtor((AnalyserAttributeProxyGenerator.IntegrationTests.AnAttribute.AnEnum)values[0])},
+           {"string[]", values => GetFromProxiedCtor(GetArray<string>(values[0]))},
         };
-        return invokers[overload](attributeData.ConstructorArguments.Select(arg => arg.Value).ToArray());
+        return invokers[overload](attributeData.ConstructorArguments.Select(GetValue).ToArray());
     }
+
+    private object GetValue(TypedConstant typedConstant)
+    {
+        if (typedConstant.Kind == TypedConstantKind.Array)
+        {
+            return typedConstant.Values.Select(GetValue).ToArray();
+        }
+
+        return typedConstant.Value;
+    }
+
+    private  T[] GetArray<T>(object array)
+        => ((object[])array).Cast<T>().ToArray();
 }
 ```
+
+The `arguments` field is provided if you need to look at the syntax for the arguments to your attribute constructor.
 
 ## Changing the generated method names
 
@@ -79,7 +110,8 @@ Just provide a third argument to change the generated method name.
 
 ## Supported attribute constructor parameter types
 
-Just primitives and enums for now.  Object and arrays are not supported.  Type is supported but the generated partial method will have ITypeSymbol instead of Type.
+Just primitives, enums, types ( as ITypeSymbol ) and arrays.
+Object is not supported.
 
 
 
