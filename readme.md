@@ -85,7 +85,7 @@ partial class Proxy
         return invokers[overload](attributeData.ConstructorArguments.Select(GetValue).ToArray());
     }
 
-    private object GetValue(TypedConstant typedConstant)
+    private static object GetValue(TypedConstant typedConstant)
     {
         if (typedConstant.Kind == TypedConstantKind.Array)
         {
@@ -95,7 +95,7 @@ partial class Proxy
         return typedConstant.Value;
     }
 
-    private  T[] GetArray<T>(object array)
+    private static T[] GetArray<T>(object array)
         => ((object[])array).Cast<T>().ToArray();
 }
 ```

@@ -94,7 +94,7 @@ Encoding.UTF8));
         return invokers[overload](attributeData.ConstructorArguments.Select(GetValue).ToArray());
     }
 
-    private {{staticKeyword}}object GetValue(TypedConstant typedConstant)
+    private static object GetValue(TypedConstant typedConstant)
     {
         if (typedConstant.Kind == TypedConstantKind.Array)
         {
@@ -104,7 +104,7 @@ Encoding.UTF8));
         return typedConstant.Value;
     }
 
-    private {{staticKeyword}} T[] GetArray<T>(object array)
+    private static T[] GetArray<T>(object array)
         => ((object[])array).Cast<T>().ToArray();
 }
 """;

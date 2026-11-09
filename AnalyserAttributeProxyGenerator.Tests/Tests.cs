@@ -28,6 +28,7 @@ namespace AttributeNs
     {
         public ProxiedAttribute(string name) { }
         public ProxiedAttribute(System.Type type, bool flag) { }
+        public ProxiedAttribute(string[] strings) { }
     }
 }
 """;
@@ -49,6 +50,8 @@ partial class Proxy
 
     private partial string {|CS8795:MyGen|}(ITypeSymbol type, bool flag);
 
+    private partial string {|CS8795:MyGen|}(string[] strings);
+
     public string MyGen(AttributeData attributeData)
     {
         var attribute = (AttributeSyntax)attributeData.ApplicationSyntaxReference.GetSyntax();
@@ -59,9 +62,23 @@ partial class Proxy
         {
            {"string", values => MyGen((string)values[0])},
            {"System.Type,bool", values => MyGen((ITypeSymbol)values[0], (bool)values[1])},
+           {"string[]", values => MyGen(GetArray<string>(values[0]))},
         };
-        return invokers[overload](attributeData.ConstructorArguments.Select(arg => arg.Value).ToArray());
+        return invokers[overload](attributeData.ConstructorArguments.Select(GetValue).ToArray());
     }
+
+    private static object GetValue(TypedConstant typedConstant)
+    {
+        if (typedConstant.Kind == TypedConstantKind.Array)
+        {
+            return typedConstant.Values.Select(GetValue).ToArray();
+        }
+
+        return typedConstant.Value;
+    }
+
+    private static T[] GetArray<T>(object array)
+        => ((object[])array).Cast<T>().ToArray();
 }
 """;
             return GeneratedSourceTestAsync(sourceCode, expectedGenerated);
@@ -114,8 +131,21 @@ static partial class Proxy
         {
            {"int", values => GetFromProxiedCtor((int)values[0])},
         };
-        return invokers[overload](attributeData.ConstructorArguments.Select(arg => arg.Value).ToArray());
+        return invokers[overload](attributeData.ConstructorArguments.Select(GetValue).ToArray());
     }
+
+    private static object GetValue(TypedConstant typedConstant)
+    {
+        if (typedConstant.Kind == TypedConstantKind.Array)
+        {
+            return typedConstant.Values.Select(GetValue).ToArray();
+        }
+
+        return typedConstant.Value;
+    }
+
+    private static T[] GetArray<T>(object array)
+        => ((object[])array).Cast<T>().ToArray();
 }
 """;
             return GeneratedSourceTestAsync(sourceCode, expectedGenerated);
@@ -164,8 +194,21 @@ partial class Proxy
         {
            {"string", values => GetFromProxiedCtor((string)values[0])},
         };
-        return invokers[overload](attributeData.ConstructorArguments.Select(arg => arg.Value).ToArray());
+        return invokers[overload](attributeData.ConstructorArguments.Select(GetValue).ToArray());
     }
+
+    private static object GetValue(TypedConstant typedConstant)
+    {
+        if (typedConstant.Kind == TypedConstantKind.Array)
+        {
+            return typedConstant.Values.Select(GetValue).ToArray();
+        }
+
+        return typedConstant.Value;
+    }
+
+    private static T[] GetArray<T>(object array)
+        => ((object[])array).Cast<T>().ToArray();
 }
 """;
             return GeneratedSourceTestAsync(sourceCode, expectedGenerated);
