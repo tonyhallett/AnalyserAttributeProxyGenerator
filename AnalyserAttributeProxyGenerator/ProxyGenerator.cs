@@ -91,7 +91,17 @@ $$"""
         {
 {{stringBuilders.InvokerEntries}}
         };
-        return invokers[overload](attributeData.ConstructorArguments.Select(arg => arg.Value).ToArray());
+        return invokers[overload](attributeData.ConstructorArguments.Select(GetValue).ToArray());
+    }
+
+    private {{staticKeyword}} object GetValue(TypedConstant typedConstant)
+    {
+        if(typedConstant.Kind == TypedConstantKind.Array)
+        {
+            return typedConstant.Values.Select(GetValue).ToArray();
+        }
+
+        return typedConstant.Value;
     }
 }
 """;

@@ -14,6 +14,9 @@ namespace AnalyserAttributeProxyGenerator.IntegrationTests
     {
         public const string MockTypeSymbolName = "MockedTypeSymbol";
 
+        private static readonly ConstructorInfo s_primitiveConstructor;
+        private static readonly ConstructorInfo s_arrayConstructor;
+
         private static readonly Dictionary<Type, string> s_typeAliases = new()
         {
             [typeof(string)] = "string",
@@ -38,13 +41,16 @@ namespace AnalyserAttributeProxyGenerator.IntegrationTests
             var mockTypeSymbol = new Mock<ITypeSymbol>();
             mockTypeSymbol.SetupGet(ts => ts.Name).Returns(MockTypeSymbolName);
             MockedTypeSymbol = mockTypeSymbol.Object;
+
+            ConstructorInfo[] ctors = typeof(TypedConstant).GetConstructors(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            s_primitiveConstructor = ctors.First(c => c.GetParameters().Length == 3);
+            s_arrayConstructor = ctors.First(c => c.GetParameters().Length == 2);
         }
 
         public ProxyAttributeData(params object[] constructorArgs)
         {
-            ImmutableArray<TypedConstant> typedConstants = [.. constructorArgs.Select(GetTypedConstant)];
-            CommonConstructorArguments = typedConstants;
-            var parameters = typedConstants.Select(tc => GetParameterSymbol(GetParameterTypeName(tc))).ToImmutableArray<IParameterSymbol>();
+            CommonConstructorArguments = [.. constructorArgs.Select(GetTypedConstant)];
+            var parameters = constructorArgs.Select(arg => GetParameterSymbol(GetParameterTypeName(arg))).ToImmutableArray();
             var mockAttributeConstructor = new Mock<IMethodSymbol>();
             mockAttributeConstructor.SetupGet(c => c.Parameters).Returns(parameters);
             CommonAttributeConstructor = mockAttributeConstructor.Object;
@@ -65,9 +71,24 @@ namespace AnalyserAttributeProxyGenerator.IntegrationTests
                 value = MockedTypeSymbol;
             }
 
-            ConstructorInfo[] ctors = typeof(TypedConstant).GetConstructors(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            return (TypedConstant)ctors.First(c => c.GetParameters().Length == 3).Invoke([null, TypedConstantKind.Primitive, value]);
+            if (value.GetType().IsArray)
+            {
+                var array = (Array)value;
+                List<TypedConstant> arrayTypedConstants = [];
+                foreach (object? entry in array)
+                {
+                    arrayTypedConstants.Add(CreatePrimitiveTypedConstant(entry));
+                }
+
+                ImmutableArray<TypedConstant> typedConstantsArg = [.. arrayTypedConstants];
+
+                return (TypedConstant)s_arrayConstructor.Invoke([null, typedConstantsArg]);
+            }
+
+            return CreatePrimitiveTypedConstant(value);
         }
+
+        private static TypedConstant CreatePrimitiveTypedConstant(object value) => (TypedConstant)s_primitiveConstructor.Invoke([null, TypedConstantKind.Primitive, value]);
 
         private static IParameterSymbol GetParameterSymbol(string typeName)
         {
@@ -76,15 +97,22 @@ namespace AnalyserAttributeProxyGenerator.IntegrationTests
             return mockParameterSymbol.Object;
         }
 
-        private static string GetParameterTypeName(TypedConstant typedConstant)
+        private static string GetParameterTypeName(object ctorArg)
         {
-            Type valueType = typedConstant.Value!.GetType();
-            if (valueType.Name == "ITypeSymbolProxy")
+            if (ctorArg is Type)
             {
                 return "System.Type";
             }
 
-            return s_typeAliases.TryGetValue(valueType, out string? alias) ? alias : valueType.FullName!.Replace('+', '.');
+            Type ctorArgType = ctorArg.GetType();
+            if (ctorArgType.IsArray)
+            {
+                Type elementType = ctorArgType.GetElementType()!;
+                string elementAlias = s_typeAliases[elementType];
+                return $"{elementAlias}[]";
+            }
+
+            return s_typeAliases.TryGetValue(ctorArgType, out string? alias) ? alias : ctorArgType.FullName!.Replace('+', '.');
         }
 
         private sealed class AttributeSyntaxReference : SyntaxReference

@@ -12,7 +12,11 @@
 
         [Test]
         public void Should_Work_With_Parameter_Type_Enum()
-   => Assert.That(GetFromProxiedCtor(AnAttribute.AnEnum.One), Is.EqualTo("One"));
+            => Assert.That(GetFromProxiedCtor(AnAttribute.AnEnum.One), Is.EqualTo("One"));
+
+        [Test]
+        public void Should_Work_With_Parameter_Type_StringArray()
+            => Assert.That(GetFromProxiedCtor([new string[] { "a", "b", "c" }]), Is.EqualTo("a,b,c"));
 
         private static string GetFromProxiedCtor(params object[] ctorArgs)
             => new Proxy().GetFromProxiedCtor(new ProxyAttributeData(ctorArgs));

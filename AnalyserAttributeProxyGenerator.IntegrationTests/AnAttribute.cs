@@ -3,7 +3,7 @@
 #pragma warning disable IDE0060 // Remove unused parameter
 #pragma warning disable RCS1163 // Unused parameter
     [AttributeUsage(AttributeTargets.All)]
-    internal class AnAttribute : Attribute
+    internal sealed class AnAttribute : Attribute
     {
         public AnAttribute(int i, string str, bool b)
         {
@@ -14,6 +14,10 @@
         }
 
         public AnAttribute(AnEnum anEnum)
+        {
+        }
+
+        public AnAttribute(string[] strings)
         {
         }
 
