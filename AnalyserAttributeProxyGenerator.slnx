@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="readme.md" />
+  </Folder>
+  <Project Path="AnalyserAttributeProxyGenerator.IntegrationTests/AnalyserAttributeProxyGenerator.IntegrationTests.csproj" />
+  <Project Path="AnalyserAttributeProxyGenerator.Tests/AnalyserAttributeProxyGenerator.Tests.csproj" />
+  <Project Path="AnalyserAttributeProxyGenerator/AnalyserAttributeProxyGenerator.csproj" />
+</Solution>

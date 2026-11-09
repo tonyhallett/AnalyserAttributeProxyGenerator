@@ -10,6 +10,7 @@ namespace AnalyserAttributeProxyGenerator
     /// <summary>
     /// Generator for creating partial class with proxy methods for attribute constructors.
     /// </summary>
+    [Generator(LanguageNames.CSharp)]
     public class ProxyGenerator : IIncrementalGenerator
     {
         internal const string DefaultGeneratedMethodName = "GetFromProxiedCtor";
@@ -24,7 +25,7 @@ namespace AnalyserAttributeProxyGenerator
             context.RegisterPostInitializationOutput(static postInitializationContext =>
             {
                 postInitializationContext.AddEmbeddedAttributeDefinition();
-                postInitializationContext.AddSource($"{AnalyserAttributeProxyAttributeName}.cs", SourceText.From(
+                postInitializationContext.AddSource($"{AnalyserAttributeProxyAttributeName}.g.cs", SourceText.From(
 $$"""
 using System;
 using Microsoft.CodeAnalysis;

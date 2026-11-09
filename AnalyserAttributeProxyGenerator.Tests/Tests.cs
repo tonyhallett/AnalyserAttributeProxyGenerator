@@ -206,7 +206,7 @@ namespace AnalyserAttributeProxy
 
             // although the matching of generated is independent of order, if there is another error it is reporting sources in the wrong order.
             sourceGenTest.TestState.GeneratedSources.AddEmbeddedAttribute<ProxyGenerator>();
-            sourceGenTest.TestState.GeneratedSources.Add((typeof(ProxyGenerator), "AnalyserAttributeProxyAttribute.cs", SourceText.From(analyserAttributeProxyAttributeSource, Encoding.UTF8)));
+            sourceGenTest.TestState.GeneratedSources.Add((typeof(ProxyGenerator), "AnalyserAttributeProxyAttribute.g.cs", SourceText.From(analyserAttributeProxyAttributeSource, Encoding.UTF8)));
             sourceGenTest.TestState.GeneratedSources.Add((typeof(ProxyGenerator), "Proxy.g.cs", SourceText.From(expectedPartial, Encoding.UTF8)));
             return sourceGenTest.RunAsync();
         }

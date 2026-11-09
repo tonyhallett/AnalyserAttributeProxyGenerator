@@ -11,6 +11,12 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IncludeBuildOutput>false</IncludeBuildOutput> <!-- Do not include the generator as a lib dependency -->
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="PolySharp" Version="1.16.0">
       <PrivateAssets>all</PrivateAssets>
@@ -36,5 +42,13 @@
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="AnalyserAttributeProxyGenerator.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="bin\**\*" />
+    <None Remove="bin\**\*" />
+    <Content Remove="bin\**\*" />
   </ItemGroup>
 </Project>
