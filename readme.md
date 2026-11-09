@@ -110,8 +110,7 @@ Just provide a third argument to change the generated method name.
 
 ## Supported attribute constructor parameter types
 
-Just primitives, enums, types ( as ITypeSymbol ) and arrays.
-Object is not supported.
+All aside from object arguments that are default structs.
 
 
 

@@ -40,6 +40,7 @@ namespace AnalyserAttributeProxyGenerator.IntegrationTests
         {
             var mockTypeSymbol = new Mock<ITypeSymbol>();
             mockTypeSymbol.SetupGet(ts => ts.Name).Returns(MockTypeSymbolName);
+            mockTypeSymbol.Setup(ts => ts.ToString()).Returns(MockTypeSymbolName);
             MockedTypeSymbol = mockTypeSymbol.Object;
 
             ConstructorInfo[] ctors = typeof(TypedConstant).GetConstructors(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
@@ -58,7 +59,15 @@ namespace AnalyserAttributeProxyGenerator.IntegrationTests
 
         public ProxyAttributeData(object obj)
         {
-            CommonConstructorArguments = [GetTypedConstant(obj)];
+            if (obj.GetType().IsArray)
+            {
+                CommonConstructorArguments = [CreateNonArrayTypedConstant(obj)];
+            }
+            else
+            {
+                CommonConstructorArguments = [GetTypedConstant(obj)];
+            }
+
             ImmutableArray<IParameterSymbol> parameters = [GetParameterSymbol("object")];
             var mockAttributeConstructor = new Mock<IMethodSymbol>();
             mockAttributeConstructor.SetupGet(c => c.Parameters).Returns(parameters);
@@ -86,7 +95,7 @@ namespace AnalyserAttributeProxyGenerator.IntegrationTests
                 List<TypedConstant> arrayTypedConstants = [];
                 foreach (object? entry in array)
                 {
-                    arrayTypedConstants.Add(CreatePrimitiveTypedConstant(entry));
+                    arrayTypedConstants.Add(CreateNonArrayTypedConstant(entry));
                 }
 
                 ImmutableArray<TypedConstant> typedConstantsArg = [.. arrayTypedConstants];
@@ -94,10 +103,10 @@ namespace AnalyserAttributeProxyGenerator.IntegrationTests
                 return (TypedConstant)s_arrayConstructor.Invoke([null, typedConstantsArg]);
             }
 
-            return CreatePrimitiveTypedConstant(value);
+            return CreateNonArrayTypedConstant(value);
         }
 
-        private static TypedConstant CreatePrimitiveTypedConstant(object value) => (TypedConstant)s_nonArrayConstructor.Invoke([null, TypedConstantKind.Primitive, value]);
+        private static TypedConstant CreateNonArrayTypedConstant(object value) => (TypedConstant)s_nonArrayConstructor.Invoke([null, TypedConstantKind.Primitive, value]);
 
         private static IParameterSymbol GetParameterSymbol(string typeName)
         {

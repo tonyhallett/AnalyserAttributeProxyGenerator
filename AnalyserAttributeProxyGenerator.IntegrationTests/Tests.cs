@@ -15,10 +15,25 @@
             => Assert.That(GetFromProxiedCtor(AnAttribute.AnEnum.One), Is.EqualTo("One"));
 
         [Test]
-        public void Should_Work_With_Parameter_Type_Object()
+        public void Should_Work_With_Parameter_Type_Object_String()
         {
             object obj = "string object";
-            Assert.That(new Proxy().GetFromProxiedCtor(new ProxyAttributeData(obj)), Is.EqualTo("string object"));
+            Assert.That(GetFromProxiedCtorObjectArg(obj), Is.EqualTo("string object"));
+        }
+
+        [Test]
+        public void Should_Work_With_Parameter_Type_Object_Type()
+        {
+            object obj = typeof(Type);
+            Assert.That(GetFromProxiedCtorObjectArg(obj), Is.EqualTo(ProxyAttributeData.MockTypeSymbolName));
+        }
+
+        [Test]
+        public void Should_Work_With_Parameter_Type_Object_StringArray()
+        {
+            string[] stringArrayArg = [];
+            object obj = stringArrayArg;
+            Assert.That(GetFromProxiedCtorObjectArg(obj), Is.EqualTo(stringArrayArg.ToString()));
         }
 
         [Test]
@@ -30,5 +45,8 @@
 
         private static string GetFromProxiedCtor(params object[] ctorArgs)
             => new Proxy().GetFromProxiedCtor(new ProxyAttributeData(ctorArgs));
+
+        private static string GetFromProxiedCtorObjectArg(object ctorArg)
+            => new Proxy().GetFromProxiedCtor(new ProxyAttributeData(ctorArg));
     }
 }
