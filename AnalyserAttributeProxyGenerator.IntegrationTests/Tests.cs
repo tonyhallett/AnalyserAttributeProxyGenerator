@@ -10,6 +10,10 @@
         public void Should_Work_With_Parameter_Type_Type()
            => Assert.That(GetFromProxiedCtor(typeof(bool)), Is.EqualTo(ProxyAttributeData.MockTypeSymbolName));
 
+        [Test]
+        public void Should_Work_With_Parameter_Type_Enum()
+   => Assert.That(GetFromProxiedCtor(AnAttribute.AnEnum.One), Is.EqualTo("One"));
+
         private static string GetFromProxiedCtor(params object[] ctorArgs)
             => new Proxy().GetFromProxiedCtor(new ProxyAttributeData(ctorArgs));
     }

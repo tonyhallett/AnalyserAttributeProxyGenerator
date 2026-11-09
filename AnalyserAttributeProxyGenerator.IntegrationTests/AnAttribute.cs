@@ -12,6 +12,16 @@
         public AnAttribute(Type type)
         {
         }
+
+        public AnAttribute(AnEnum anEnum)
+        {
+        }
+
+        public enum AnEnum
+        {
+            One = 0,
+            Two = 1,
+        }
     }
 #pragma warning restore IDE0060 // Remove unused parameter
 #pragma warning restore RCS1163 // Unused parameter

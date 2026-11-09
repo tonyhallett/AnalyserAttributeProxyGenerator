@@ -10,6 +10,8 @@ namespace AnalyserAttributeProxyGenerator.IntegrationTests
         private partial string GetFromProxiedCtor(int i, string str, bool b) => $"i: {i}, str: {str}, b: {b}";
 
         private partial string GetFromProxiedCtor(ITypeSymbol type) => type.Name;
+
+        private partial string GetFromProxiedCtor(AnAttribute.AnEnum anEnum) => anEnum.ToString();
 #pragma warning restore CA1822 // Mark members as static
 
     }

@@ -84,7 +84,7 @@ namespace AnalyserAttributeProxyGenerator.IntegrationTests
                 return "System.Type";
             }
 
-            return s_typeAliases.TryGetValue(valueType, out string? alias) ? alias : valueType.Name;
+            return s_typeAliases.TryGetValue(valueType, out string? alias) ? alias : valueType.FullName!.Replace('+', '.');
         }
 
         private sealed class AttributeSyntaxReference : SyntaxReference
