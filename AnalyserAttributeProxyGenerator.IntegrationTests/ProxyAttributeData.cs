@@ -56,6 +56,15 @@ namespace AnalyserAttributeProxyGenerator.IntegrationTests
             CommonAttributeConstructor = mockAttributeConstructor.Object;
         }
 
+        public ProxyAttributeData(object obj)
+        {
+            CommonConstructorArguments = [GetTypedConstant(obj)];
+            ImmutableArray<IParameterSymbol> parameters = [GetParameterSymbol("object")];
+            var mockAttributeConstructor = new Mock<IMethodSymbol>();
+            mockAttributeConstructor.SetupGet(c => c.Parameters).Returns(parameters);
+            CommonAttributeConstructor = mockAttributeConstructor.Object;
+        }
+
         protected override INamedTypeSymbol? CommonAttributeClass { get; }
         protected override IMethodSymbol? CommonAttributeConstructor { get; }
         protected override SyntaxReference? CommonApplicationSyntaxReference { get; } = new AttributeSyntaxReference();

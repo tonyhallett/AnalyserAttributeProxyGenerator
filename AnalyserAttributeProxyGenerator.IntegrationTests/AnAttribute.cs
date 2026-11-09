@@ -17,6 +17,10 @@
         {
         }
 
+        public AnAttribute(object anObject)
+        {
+        }
+
         public AnAttribute(string[] strings)
         {
         }

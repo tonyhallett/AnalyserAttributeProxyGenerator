@@ -13,6 +13,8 @@ namespace AnalyserAttributeProxyGenerator.IntegrationTests
 
         private partial string GetFromProxiedCtor(AnAttribute.AnEnum anEnum) => anEnum.ToString();
 
+        private partial string GetFromProxiedCtor(object anObject) => anObject.ToString()!;
+
         private partial string GetFromProxiedCtor(string[] strings) => string.Join(',', strings);
 #pragma warning restore CA1822 // Mark members as static
 

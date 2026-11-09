@@ -15,6 +15,13 @@
             => Assert.That(GetFromProxiedCtor(AnAttribute.AnEnum.One), Is.EqualTo("One"));
 
         [Test]
+        public void Should_Work_With_Parameter_Type_Object()
+        {
+            object obj = "string object";
+            Assert.That(new Proxy().GetFromProxiedCtor(new ProxyAttributeData(obj)), Is.EqualTo("string object"));
+        }
+
+        [Test]
         public void Should_Work_With_Parameter_Type_StringArray()
         {
             string[] stringArrayArg = ["a", "b", "c"];
