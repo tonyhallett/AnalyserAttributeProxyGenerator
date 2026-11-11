@@ -1,90 +1,105 @@
-﻿namespace AnalyserAttributeProxyGenerator.IntegrationTests
+﻿using System.Collections.Immutable;
+using System.Globalization;
+using System.Reflection;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+
+namespace AnalyserAttributeProxyGenerator.IntegrationTests
 {
     internal class Tests
     {
         [Test]
-        public void Should_Work_With_Multiple_Primitive_Parameter_Types()
-            => Assert.That(GetFromProxiedCtor(1, "test", true), Is.EqualTo("i: 1, str: test, b: True"));
+        public Task Should_Work_With_Multiple_Primitive_Parameter_Types()
+            => AssertGetFromProxiedCtorAsync("1, \"test\", true", "i: 1, str: test, b: True");
 
         [Test]
-        public void Should_Work_With_Nullable_Value_Type()
+        public Task Should_Work_With_Parameter_Type_Type()
+           => AssertGetFromProxiedCtorAsync("typeof(bool)", "Boolean");
+
+        [Test]
+        public Task Should_Work_With_Parameter_Type_Enum()
+            => AssertGetFromProxiedCtorAsync("System.DayOfWeek.Thursday", "DayOfWeek Thursday");
+
+        [Test]
+        public Task Should_Work_With_Parameter_Type_Object_String()
+            => AssertGetFromProxiedCtorAsync("\"string object\"", "Object string object");
+
+        [Test]
+        public Task Should_Work_With_Parameter_Type_Object_Type()
+            => AssertGetFromProxiedCtorAsync("(object)typeof(bool)", "Object bool");
+
+        [Test]
+        public Task Should_Work_With_Parameter_Type_StringArray()
+            => AssertGetFromProxiedCtorAsync("new string[]{ \"a\", \"b\", \"c\"}", "a,b,c");
+
+        private static async Task AssertGetFromProxiedCtorAsync(string attributeArguments, string expected)
         {
-            int? nullableInt = 42;
-            Assert.That(GetFromProxiedCtorNullable(nullableInt, false, "int?"), Is.EqualTo("42"));
+            IEnumerable<PortableExecutableReference> references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)
+                .Split(Path.PathSeparator)
+                .Select(path => MetadataReference.CreateFromFile(path));
+
+            var projectInfo = ProjectInfo.Create(
+                ProjectId.CreateNewId(),
+                VersionStamp.Create(),
+                "MainProject",
+                "MainAssembly",
+                LanguageNames.CSharp,
+                compilationOptions: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary),
+                metadataReferences: references);
+
+            string anAttributePath = GetFilePathInProject("AnAttribute.cs");
+
+            AdhocWorkspace workspace = new();
+            Project project = workspace.AddProject(projectInfo);
+
+            Document anAttributeDocument = project.AddDocumentFromFilePath(anAttributePath, "AnAttribute.cs");
+            (string attributeName, string attributeFullyQualifiedTypeName) = await anAttributeDocument.GetClassNameAndFullyQualifiedTypeNameAsync();
+
+            string sourceCode =
+$$"""
+[{{attributeFullyQualifiedTypeName}}({{attributeArguments}})]
+public class Proxy
+{
+}
+""";
+            Document document = anAttributeDocument.Project.AddDocument(
+"ForTest.cs",
+sourceCode,
+filePath: "filepath.cs");
+            await ThrowForDiagnosticsAsync(document);
+            AttributeData attribute = await document.GetAttributeAppliedToSingleTypeInDocumentAsync(attributeName);
+
+            Assert.That(new Proxy().GetFromProxiedCtor(attribute), Is.EqualTo(expected));
         }
 
-        [Test]
-        public void Should_Work_With_Nullable_Value_Type_Null()
+        private static async Task ThrowForDiagnosticsAsync(Document document)
         {
-            int? nullableInt = null;
-            Assert.That(GetFromProxiedCtorNullable(nullableInt, false, "int?"), Is.EqualTo("null"));
+            SemanticModel? semanticModel = await document.GetSemanticModelAsync();
+            ImmutableArray<Diagnostic> diagnostics = semanticModel!.Compilation.GetDiagnostics();
+            if (diagnostics.Length > 0)
+            {
+#pragma warning disable RS1035 // Do not use APIs banned for analyzers
+                throw new InvalidOperationException(string.Join(Environment.NewLine, diagnostics.Select(d => d.GetMessage(CultureInfo.InvariantCulture))));
+#pragma warning restore RS1035 // Do not use APIs banned for analyzers
+            }
         }
 
-        [Test]
-        public void Should_Work_With_Parameter_Type_Type()
-           => Assert.That(GetFromProxiedCtor(typeof(bool)), Is.EqualTo(ProxyAttributeData.MockTypeSymbolName));
-
-        [Test]
-        public void Should_Work_With_Parameter_Type_Enum()
-            => Assert.That(GetFromProxiedCtor(AnAttribute.AnEnum.One), Is.EqualTo("One"));
-
-        [Test]
-        public void Should_Work_With_Parameter_Type_Object_String()
+        private static string GetFilePathInProject(string fileName)
         {
-            object obj = "string object";
-            Assert.That(GetFromProxiedCtorObjectArg(obj), Is.EqualTo("string object"));
+            DirectoryInfo? dir = new FileInfo(Assembly.GetExecutingAssembly().Location).Directory;
+            DirectoryInfo? projectDirectory = null;
+            while (dir != null)
+            {
+                if (dir.GetFiles("*.csproj").Length > 0)
+                {
+                    projectDirectory = dir;
+                    break;
+                }
+
+                dir = dir.Parent;
+            }
+
+            return Path.Combine(projectDirectory!.FullName, fileName);
         }
-
-        [Test]
-        public void Should_Work_With_Parameter_Type_Object_Type()
-        {
-            object obj = typeof(Type);
-            Assert.That(GetFromProxiedCtorObjectArg(obj), Is.EqualTo(ProxyAttributeData.MockTypeSymbolName));
-        }
-
-        [Test]
-        public void Should_Work_With_Parameter_Type_Object_StringArray()
-        {
-            string[] stringArrayArg = [];
-            object obj = stringArrayArg;
-            Assert.That(GetFromProxiedCtorObjectArg(obj), Is.EqualTo(stringArrayArg.ToString()));
-        }
-
-        [Test]
-        public void Should_Work_With_Parameter_Type_StringArray()
-        {
-            string[] stringArrayArg = ["a", "b", "c"];
-            Assert.That(GetFromProxiedCtor([stringArrayArg]), Is.EqualTo("a,b,c"));
-        }
-
-        [Test]
-        public void Should_Work_With_Parameter_Type_Nullable_Int_Array()
-        {
-            int[]? intArrayArg = [1, 2, 3];
-            Assert.That(GetFromProxiedCtorNullable(intArrayArg, true, "int[]?"), Is.EqualTo("1,2,3"));
-        }
-
-        [Test]
-        public void Should_Work_With_Parameter_Type_Nullable_Int_Array_Null()
-        {
-            int[]? intArrayArg = null;
-            Assert.That(GetFromProxiedCtorNullable(intArrayArg, true, "int[]?"), Is.EqualTo("null"));
-        }
-
-        [Test]
-        public void Should_Work_With_Parameter_Type_Array_Of_Arrays()
-        {
-            string[][] stringArrayArg = [["a", "b"], ["c", "d"]];
-            Assert.That(GetFromProxiedCtor([stringArrayArg]), Is.EqualTo("a,b - c,d"));
-        }
-
-        private static string GetFromProxiedCtor(params object[] ctorArgs)
-            => new Proxy().GetFromProxiedCtor(new ProxyAttributeData(ctorArgs));
-
-        private static string GetFromProxiedCtorNullable<T>(T? nullable, bool isArray, string typeName)
-            => new Proxy().GetFromProxiedCtor(new ProxyAttributeData(nullable, isArray, typeName));
-
-        private static string GetFromProxiedCtorObjectArg(object ctorArg)
-            => new Proxy().GetFromProxiedCtor(new ProxyAttributeData(ctorArg));
     }
 }

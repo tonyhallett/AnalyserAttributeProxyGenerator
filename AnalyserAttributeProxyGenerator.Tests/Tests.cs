@@ -505,6 +505,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
                 GetExpectedGenerated(isStatic, returnType, proxyNamespace, invokers, methodName, partialDeclarationParams));
         }
 
-        private record SourceExpectedGenerated(string Source, string ExpectedGenerated);
+        private sealed record SourceExpectedGenerated(string Source, string ExpectedGenerated);
     }
 }

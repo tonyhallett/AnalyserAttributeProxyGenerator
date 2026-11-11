@@ -2,22 +2,18 @@
 {
 #pragma warning disable IDE0060 // Remove unused parameter
 #pragma warning disable RCS1163 // Unused parameter
-    [AttributeUsage(AttributeTargets.All)]
-    internal sealed class AnAttribute : Attribute
+    [System.AttributeUsage(System.AttributeTargets.Class)]
+    internal sealed class AnAttribute : System.Attribute
     {
         public AnAttribute(int i, string str, bool b)
         {
         }
 
-        public AnAttribute(int? i)
+        public AnAttribute(System.Type type)
         {
         }
 
-        public AnAttribute(Type type)
-        {
-        }
-
-        public AnAttribute(AnEnum anEnum)
+        public AnAttribute(System.DayOfWeek dayOfWeek)
         {
         }
 
@@ -27,20 +23,6 @@
 
         public AnAttribute(string[] strings)
         {
-        }
-
-        public AnAttribute(int[]? maybeInts)
-        {
-        }
-
-        public AnAttribute(string[][] arrayOfArrays)
-        {
-        }
-
-        public enum AnEnum
-        {
-            One = 0,
-            Two = 1,
         }
     }
 #pragma warning restore IDE0060 // Remove unused parameter
