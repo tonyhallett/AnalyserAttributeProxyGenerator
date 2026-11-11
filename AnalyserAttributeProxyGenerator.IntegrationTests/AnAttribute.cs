@@ -9,6 +9,10 @@
         {
         }
 
+        public AnAttribute(int? i)
+        {
+        }
+
         public AnAttribute(Type type)
         {
         }
@@ -22,6 +26,14 @@
         }
 
         public AnAttribute(string[] strings)
+        {
+        }
+
+        public AnAttribute(int[]? maybeInts)
+        {
+        }
+
+        public AnAttribute(string[][] arrayOfArrays)
         {
         }
 

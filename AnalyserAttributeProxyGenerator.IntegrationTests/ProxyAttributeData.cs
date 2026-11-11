@@ -57,6 +57,15 @@ namespace AnalyserAttributeProxyGenerator.IntegrationTests
             CommonAttributeConstructor = mockAttributeConstructor.Object;
         }
 
+        public ProxyAttributeData(object? obj, bool isArray, string typeName)
+        {
+            CommonConstructorArguments = [GetTypedConstant(obj, isArray)];
+            ImmutableArray<IParameterSymbol> parameters = [GetParameterSymbol(typeName)];
+            var mockAttributeConstructor = new Mock<IMethodSymbol>();
+            mockAttributeConstructor.SetupGet(c => c.Parameters).Returns(parameters);
+            CommonAttributeConstructor = mockAttributeConstructor.Object;
+        }
+
         public ProxyAttributeData(object obj)
         {
             if (obj.GetType().IsArray)
@@ -82,6 +91,21 @@ namespace AnalyserAttributeProxyGenerator.IntegrationTests
 
         private static ITypeSymbol MockedTypeSymbol { get; }
 
+        private static TypedConstant GetTypedConstant(object? value, bool isArray)
+        {
+            if (value != null)
+            {
+                return GetTypedConstant(value);
+            }
+
+            if (isArray)
+            {
+                return CreateNonArrayTypedConstant(null, TypedConstantKind.Array);
+            }
+
+            return CreateNonArrayTypedConstant(value);
+        }
+
         private static TypedConstant GetTypedConstant(object value)
         {
             if (value is Type)
@@ -106,7 +130,8 @@ namespace AnalyserAttributeProxyGenerator.IntegrationTests
             return CreateNonArrayTypedConstant(value);
         }
 
-        private static TypedConstant CreateNonArrayTypedConstant(object value) => (TypedConstant)s_nonArrayConstructor.Invoke([null, TypedConstantKind.Primitive, value]);
+        private static TypedConstant CreateNonArrayTypedConstant(object? value, TypedConstantKind typedConstantKind = TypedConstantKind.Primitive)
+            => (TypedConstant)s_nonArrayConstructor.Invoke([null, typedConstantKind, value]);
 
         private static IParameterSymbol GetParameterSymbol(string typeName)
         {
@@ -126,8 +151,15 @@ namespace AnalyserAttributeProxyGenerator.IntegrationTests
             if (ctorArgType.IsArray)
             {
                 Type elementType = ctorArgType.GetElementType()!;
+                string arraySuffix = string.Empty;
+                while (elementType.IsArray)
+                {
+                    elementType = elementType.GetElementType()!;
+                    arraySuffix += "[]";
+                }
+
                 string elementAlias = s_typeAliases[elementType];
-                return $"{elementAlias}[]";
+                return $"{elementAlias}[]{arraySuffix}";
             }
 
             return s_typeAliases.TryGetValue(ctorArgType, out string? alias) ? alias : ctorArgType.FullName!.Replace('+', '.');
