@@ -111,9 +111,10 @@ $$"""
                 "string",
                 false,
                 expectedInvokers,
-                string.Empty,
+                "GetFromProxiedCtor",
                 args,
-                args);
+                args,
+                true);
         }
 
         [Test]
@@ -132,9 +133,10 @@ $$"""
                 "string",
                 false,
                 expectedInvokers,
-                string.Empty,
+                "GetFromProxiedCtor",
                 args,
-                args);
+                args,
+                true);
         }
 
         [Test]
@@ -159,24 +161,24 @@ $$"""
         }
 
         [Test]
-        public Task Should_Work_With_Nullable_Value_types()
+        public Task Should_Work_With_Object_Nullable()
         {
             const string expectedInvokers =
 """
         var invokers = new Dictionary<string, Func<object?[], string>>
         {
-           {"int?", values => GetFromProxiedCtor((int?)values[0])},
+           {"object", values => GetFromProxiedCtor((object?)values[0])},
         };
 """;
-            string[] args = ["int? optional"];
             return GeneratedSourceTestAsync(
                 false,
                 "string",
                 false,
                 expectedInvokers,
-                string.Empty,
-                args,
-                args);
+                "GetFromProxiedCtor",
+                ["object obj"],
+                ["object? obj"],
+                true);
         }
 
         [TestCase("string")]
@@ -208,39 +210,18 @@ $$"""
 """
         var invokers = new Dictionary<string, Func<object?[], string>>
         {
-           {"string[]?", values => GetFromProxiedCtor(GetOptionalArray<string>(values[0]))},
+           {"string[]", values => GetFromProxiedCtor(GetOptionalArray<string?>(values[0]))},
         };
 """;
-            string[] args = ["string[]? optionalArray"];
             return GeneratedSourceTestAsync(
                 false,
                 "string",
                 false,
                 expectedInvokers,
-                string.Empty,
-                args,
-                args);
-        }
-
-        [Test]
-        public Task Should_Work_With_Arrays_OfArrays()
-        {
-            const string expectedInvokers =
-"""
-        var invokers = new Dictionary<string, Func<object?[], string>>
-        {
-           {"string[][]", values => GetFromProxiedCtor(GetArray<string[]>(values[0]!))},
-        };
-""";
-            string[] args = ["string[][] arrayOfArrays"];
-            return GeneratedSourceTestAsync(
-                false,
-                "string",
-                false,
-                expectedInvokers,
-                string.Empty,
-                args,
-                args);
+                "GetFromProxiedCtor",
+                ["string[] arr"],
+                ["string?[]? arr"],
+                true);
         }
 
         [Test]
@@ -261,6 +242,48 @@ $$"""
                 "MyGen",
                 ["System.Type type"],
                 ["ITypeSymbol type"]);
+        }
+
+        [Test]
+        public Task Should_Work_With_Nullable_ITypeSymbol()
+        {
+            const string expectedInvokers =
+"""
+        var invokers = new Dictionary<string, Func<object?[], string>>
+        {
+           {"System.Type", values => MyGen((ITypeSymbol?)values[0])},
+        };
+""";
+            return GeneratedSourceTestAsync(
+                false,
+                "string",
+                false,
+                expectedInvokers,
+                "MyGen",
+                ["System.Type type"],
+                ["ITypeSymbol? type"],
+                true);
+        }
+
+        [Test]
+        public Task Should_Work_With_Nullable_string()
+        {
+            const string expectedInvokers =
+"""
+        var invokers = new Dictionary<string, Func<object?[], string>>
+        {
+           {"string", values => MyGen((string?)values[0])},
+        };
+""";
+            return GeneratedSourceTestAsync(
+                false,
+                "string",
+                false,
+                expectedInvokers,
+                "MyGen",
+                ["string str"],
+                ["string? str"],
+                true);
         }
 
         [Test]
@@ -327,9 +350,10 @@ $$"""
             string invokers,
             string methodName,
             string[] attributeConstructorParams,
-            string[] partialDeclarationParams)
+            string[] partialDeclarationParams,
+            bool generateNullableReferenceTypes = false)
         {
-            (string source, string expectedPartial) = GetSourceExpectedGenerated(isStatic, returnType, proxyIsGlobal, invokers, methodName, attributeConstructorParams, partialDeclarationParams);
+            (string source, string expectedPartial) = GetSourceExpectedGenerated(isStatic, returnType, proxyIsGlobal, invokers, methodName, attributeConstructorParams, partialDeclarationParams, generateNullableReferenceTypes);
             return GeneratedSourceTestAsync(source, expectedPartial);
         }
 
@@ -345,7 +369,7 @@ namespace AnalyserAttributeProxy
     [AttributeUsage(AttributeTargets.Class), Embedded]
     internal sealed class AnalyserAttributeProxyAttribute : Attribute
     {
-        public AnalyserAttributeProxyAttribute(Type proxiedAttributeType, Type returnType, string methodName = "GetFromProxiedCtor")
+        public AnalyserAttributeProxyAttribute(Type proxiedAttributeType, Type returnType, string methodName = "GetFromProxiedCtor", bool generateNullableReferenceTypes = false)
         {
             
         }
@@ -378,6 +402,7 @@ namespace AnalyserAttributeProxy
             string returnType,
             string proxyNamespace,
             string methodName,
+            bool generateNullableReferenceTypes,
             params string[] attributeConstructorParams)
         {
             string namespaceStart = string.Empty;
@@ -396,7 +421,7 @@ namespace AnalyserAttributeProxy
             }
             else
             {
-                attribute += $", \"{methodName}\")]";
+                attribute += $", \"{methodName}\", {(generateNullableReferenceTypes ? "true" : "false")})]";
             }
 
             StringBuilder ctorsBuilder = new();
@@ -497,11 +522,12 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
             string invokers,
             string methodName,
             string[] attributeConstructorParams,
-            string[] partialDeclarationParams)
+            string[] partialDeclarationParams,
+            bool generateNullableReferenceTypes = false)
         {
             string proxyNamespace = proxyIsGlobal ? string.Empty : "SourceNs";
             return new(
-                GetSource(isStatic, returnType, proxyNamespace, methodName, attributeConstructorParams),
+                GetSource(isStatic, returnType, proxyNamespace, methodName, generateNullableReferenceTypes, attributeConstructorParams),
                 GetExpectedGenerated(isStatic, returnType, proxyNamespace, invokers, methodName, partialDeclarationParams));
         }
 

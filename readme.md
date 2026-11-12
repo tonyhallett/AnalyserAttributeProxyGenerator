@@ -12,6 +12,8 @@ e.g with return type string
 Given an attribute
 
 ```C#
+    internal sealed class AnAttribute : Attribute
+    {
         public AnAttribute(int i, string str, bool b)
         {
         }
@@ -20,19 +22,24 @@ Given an attribute
         {
         }
 
-        public AnAttribute(AnEnum anEnum)
+        public AnAttribute(DayOfWeek dayOfWeek)
+        {
+        }
+
+        public AnAttribute(object anObject)
         {
         }
 
         public AnAttribute(string[] strings)
         {
         }
+    }
 
-        public enum AnEnum
-        {
-            One = 0,
-            Two = 1,
-        }
+    public enum AnEnum
+    {
+        One = 0,
+        Two = 1,
+    }
 
 ```
 
@@ -50,9 +57,9 @@ internal partial class Proxy
 }
 ```
 
-the generated partial proxy creates 2 partial method declarations.
+the generated partial proxy creates partial method declarations for each attribute constructor.
 
-The first has parameters matching the constructor arguments whereas the second has ITypeSymbol instead of Type.
+When the parameter type is Type ITypeSymbol will be used instead.
 
 The implementation just uses the constructor IMethodSymbol parameter types to determine which partial method to invoke.
 
@@ -65,28 +72,36 @@ partial class Proxy
 
     private partial string GetFromProxiedCtor(ITypeSymbol type);
 
-    private partial string GetFromProxiedCtor(AnalyserAttributeProxyGenerator.IntegrationTests.AnAttribute.AnEnum anEnum);
+    private partial string GetFromProxiedCtor(System.DayOfWeek dayOfWeek);
+
+    private partial string GetFromProxiedCtor(object anObject);
 
     private partial string GetFromProxiedCtor(string[] strings);
 
     public string GetFromProxiedCtor(AttributeData attributeData)
     {
-        var attribute = (AttributeSyntax)attributeData.ApplicationSyntaxReference.GetSyntax();
-        arguments = attribute.ArgumentList.Arguments;
-        IMethodSymbol ctor = attributeData.AttributeConstructor;
+        var attribute = (AttributeSyntax)attributeData.ApplicationSyntaxReference!.GetSyntax();
+        arguments = attribute.ArgumentList!.Arguments;
+        IMethodSymbol ctor = attributeData.AttributeConstructor!;
         var overload = string.Join(",", ctor.Parameters.Select(p => p.Type.ToDisplayString()));
-        var invokers = new Dictionary<string, Func<object[], string>>
+        var invokers = new Dictionary<string, Func<object?[], string>>
         {
-           {"int,string,bool", values => GetFromProxiedCtor((int)values[0], (string)values[1], (bool)values[2])},
-           {"System.Type", values => GetFromProxiedCtor((ITypeSymbol)values[0])},
-           {"AnalyserAttributeProxyGenerator.IntegrationTests.AnAttribute.AnEnum", values => GetFromProxiedCtor((AnalyserAttributeProxyGenerator.IntegrationTests.AnAttribute.AnEnum)values[0])},
-           {"string[]", values => GetFromProxiedCtor(GetArray<string>(values[0]))},
+           {"int,string,bool", values => GetFromProxiedCtor((int)values[0]!, (string)values[1]!, (bool)values[2]!)},
+           {"System.Type", values => GetFromProxiedCtor((ITypeSymbol)values[0]!)},
+           {"System.DayOfWeek", values => GetFromProxiedCtor((System.DayOfWeek)values[0]!)},
+           {"object", values => GetFromProxiedCtor((object)values[0]!)},
+           {"string[]", values => GetFromProxiedCtor(GetArray<string>(values[0]!))},
         };
         return invokers[overload](attributeData.ConstructorArguments.Select(GetValue).ToArray());
     }
 
-    private static object GetValue(TypedConstant typedConstant)
+    private static object? GetValue(TypedConstant typedConstant)
     {
+        if (typedConstant.IsNull)
+        {
+            return null;
+        }
+
         if (typedConstant.Kind == TypedConstantKind.Array)
         {
             return typedConstant.Values.Select(GetValue).ToArray();
@@ -95,6 +110,9 @@ partial class Proxy
         return typedConstant.Value;
     }
 
+    private static T[]? GetOptionalArray<T>(object? array)
+        => array == null ? null : GetArray<T>(array);
+
     private static T[] GetArray<T>(object array)
         => ((object[])array).Cast<T>().ToArray();
 }
@@ -102,15 +120,24 @@ partial class Proxy
 
 The `arguments` field is provided if you need to look at the syntax for the arguments to your attribute constructor.
 
-## Changing the generated method names
+## Additional arguments
 
-`public AnalyserAttributeProxyAttribute(Type proxiedAttributeType, Type returnType, string methodName = "GetFromProxiedCtor")`
+`public AnalyserAttributeProxyAttribute(Type proxiedAttributeType, Type returnType, string methodName = "GetFromProxiedCtor",  bool generateNullableReferenceTypes = false)`
 
 Just provide a third argument to change the generated method name.
 
-## Supported attribute constructor parameter types
+If the fourth argument is true then instead of e.g
 
-All aside from object arguments that are default structs.
+`private partial string GetFromProxiedCtor(ITypeSymbol type);`
+
+The parameter will be a nullable reference type.
+
+`private partial string GetFromProxiedCtor(ITypeSymbol? type);`
+
+
+
+
+
 
 
 

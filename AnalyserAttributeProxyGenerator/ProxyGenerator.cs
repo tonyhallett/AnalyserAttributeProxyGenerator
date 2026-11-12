@@ -17,6 +17,8 @@ namespace AnalyserAttributeProxyGenerator
         internal const string AttributeNamespace = "AnalyserAttributeProxy";
         internal const string AnalyserAttributeProxyAttributeName = "AnalyserAttributeProxyAttribute";
 
+        private readonly string[] _referenceTypes = ["ITypeSymbol", "object", "string"];
+
         internal static string FullyQualifiedAttributeName => $"{AttributeNamespace}.{AnalyserAttributeProxyAttributeName}";
 
         /// <inheritdoc/>
@@ -35,7 +37,7 @@ namespace {{AttributeNamespace}}
     [AttributeUsage(AttributeTargets.Class), Embedded]
     internal sealed class {{AnalyserAttributeProxyAttributeName}} : Attribute
     {
-        public {{AnalyserAttributeProxyAttributeName}}(Type proxiedAttributeType, Type returnType, string methodName = "{{DefaultGeneratedMethodName}}")
+        public {{AnalyserAttributeProxyAttributeName}}(Type proxiedAttributeType, Type returnType, string methodName = "{{DefaultGeneratedMethodName}}", bool generateNullableReferenceTypes = false)
         {
             
         }
@@ -56,15 +58,12 @@ Encoding.UTF8));
                         partialClassSymbol.IsStatic,
                         attributeClass.GetValue<INamedTypeSymbol>(1).ToDisplayString(),
                         attributeClass.GetValue<string>(2),
+                        attributeClass.GetValue<bool>(3),
                         new ConstructorParameters(attributeClass.GetValue<INamedTypeSymbol>(0)));
                 });
 
-            IncrementalValuesProvider<(ProxyAttributeModel? Left, Compilation Right)> combined = pipeline.Combine(context.CompilationProvider);
-
-            context.RegisterSourceOutput(combined, (context, result) =>
+            context.RegisterSourceOutput(pipeline, (context, model) =>
             {
-                (ProxyAttributeModel? model, Compilation compilation) = result;
-                bool nullableAnnotationsEnabled = compilation.Options.NullableContextOptions.AnnotationsEnabled();
                 if (model != null)
                 {
                     string generatedMethodName = model.GeneratedMethodName;
@@ -140,10 +139,10 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
                     string CreateProxiedGetter(List<ConstructorParameter> constructorParameters)
                     {
-                        StringBuilder sb = StringBuilderCommon(
+                        StringBuilder sb = ConstructorParametersCommaDelimitingBuilder(
                             string.Empty,
                             constructorParameters,
-                            (sb, pType, _, parameter) => sb.Append($"{pType} {parameter.Name}"));
+                            (sb, pType, _, parameter) => sb.Append($"{GetParameterType(pType)} {parameter.Name}"));
                         return
     $$"""
     private {{staticKeyword}}partial {{model.ReturnType}} {{generatedMethodName}}({{sb}});
@@ -154,29 +153,21 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
                     string CreateInvokerEntry(List<ConstructorParameter> constructorParameters)
                     {
                         string lookupKey = string.Join(",", constructorParameters.Select(p => p.Type));
-                        return StringBuilderCommon(
+                        return ConstructorParametersCommaDelimitingBuilder(
                             $"           {{\"{lookupKey}\", values => {generatedMethodName}(",
                             constructorParameters,
                             (sb, pType, i, _) =>
                             {
-                                bool optionalArrayType = pType.EndsWith("[]?", StringComparison.InvariantCulture);
-                                if (pType.EndsWith("[]", StringComparison.InvariantCulture) || optionalArrayType)
+                                bool generateNullableReferenceTypes = model.GenerateNullableReferenceTypes;
+                                if (pType.EndsWith("[]", StringComparison.InvariantCulture))
                                 {
-                                    string prefix;
-                                    if (optionalArrayType)
-                                    {
-                                        prefix = $"GetOptionalArray<{pType[..^3]}>(";
-                                    }
-                                    else
-                                    {
-                                        prefix = $"GetArray<{pType[..^2]}>(";
-                                    }
-
-                                    string possibyNullForgiving = optionalArrayType ? string.Empty : "!";
-                                    sb.Append($"{prefix}values[{i}]{possibyNullForgiving})");
+                                    string prefix = generateNullableReferenceTypes ? "GetOptionalArray" : "GetArray";
+                                    string possibyNullForgiving = generateNullableReferenceTypes ? string.Empty : "!";
+                                    sb.Append($"{prefix}<{GetParameterType(pType[..^2])}>(values[{i}]{possibyNullForgiving})");
                                 }
                                 else
                                 {
+                                    pType = GetParameterType(pType);
                                     string possibyNullForgiving = pType.EndsWith("?", StringComparison.InvariantCulture) ? string.Empty : "!";
                                     sb.Append($"({pType})values[{i}]{possibyNullForgiving}");
                                 }
@@ -184,7 +175,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
                             .Append(")},").ToString();
                     }
 
-                    StringBuilder StringBuilderCommon(
+                    StringBuilder ConstructorParametersCommaDelimitingBuilder(
                         string sbStart,
                         List<ConstructorParameter> constructorParameters,
                         Action<StringBuilder, string, int, ConstructorParameter> parameterAction)
@@ -203,6 +194,21 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
                         }
 
                         return sb;
+                    }
+
+                    string GetParameterType(string parameterType)
+                    {
+                        if (!model.GenerateNullableReferenceTypes)
+                        {
+                            return parameterType;
+                        }
+
+                        if (parameterType.EndsWith("[]", StringComparison.InvariantCulture))
+                        {
+                            return GetParameterType(parameterType[..^2]) + "[]?";
+                        }
+
+                        return _referenceTypes.Contains(parameterType) ? parameterType + "?" : parameterType;
                     }
                 }
             });
@@ -224,7 +230,14 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
             return partialNamespaceName;
         }
 
-        private record ProxyAttributeModel(string PartialNamespaceName, string PartialClassName, bool IsStatic, string ReturnType, string GeneratedMethodName, ConstructorParameters ConstructorParameters);
+        private record ProxyAttributeModel(
+            string PartialNamespaceName,
+            string PartialClassName,
+            bool IsStatic,
+            string ReturnType,
+            string GeneratedMethodName,
+            bool GenerateNullableReferenceTypes,
+            ConstructorParameters ConstructorParameters);
 
         private class StringBuilders
         {

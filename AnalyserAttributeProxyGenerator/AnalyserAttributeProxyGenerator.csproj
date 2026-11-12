@@ -15,6 +15,13 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IncludeBuildOutput>false</IncludeBuildOutput> <!-- Do not include the generator as a lib dependency -->
     <NoWarn>$(NoWarn);NU5128</NoWarn>
+    <Authors>TonyHUk</Authors>
+    <Copyright>Copyright Tony Hallett 2026</Copyright>
+    <PackageProjectUrl>https://github.com/tonyhallett/AnalyserAttributeProxyGenerator</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/tonyhallett/TestNamesAnalyzer.git</RepositoryUrl>
+    <PackageTags>Roslyn;Source Generator;Analyzer;Analyser;Attribute;Proxy</PackageTags>
+    <PackageReadmeFile>readme.md</PackageReadmeFile>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>
@@ -45,6 +52,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="..\readme.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="bin\**\*" />
