@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using System.Text;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Testing;
 using Microsoft.CodeAnalysis.Text;
@@ -10,8 +11,12 @@ namespace AnalyserAttributeProxyGenerator.Tests
 {
     internal sealed class Tests
     {
-        [Test]
-        public Task Should_Generate_Non_Static()
+        [TestCase(LanguageVersion.Default, true)]
+        [TestCase(LanguageVersion.Default, false)]
+
+        // cannot have true for 7.3.
+        [TestCase(LanguageVersion.CSharp7_3, false)]
+        public Task Should_Generate_Non_Static(LanguageVersion languageVersion, bool nullableEnabled)
         {
             const string expectedInvokers =
 """
@@ -28,7 +33,9 @@ namespace AnalyserAttributeProxyGenerator.Tests
                 expectedInvokers,
                 string.Empty,
                 args,
-                args);
+                args,
+                languageVersion: languageVersion,
+                nullableEnabled: nullableEnabled);
         }
 
         [Test]
@@ -343,60 +350,6 @@ $$"""
             return GeneratedSourceTestAsync(false, "string", true, expectedInvokers, string.Empty, args, args);
         }
 
-        private static Task GeneratedSourceTestAsync(
-            bool isStatic,
-            string returnType,
-            bool proxyIsGlobal,
-            string invokers,
-            string methodName,
-            string[] attributeConstructorParams,
-            string[] partialDeclarationParams,
-            bool generateNullableReferenceTypes = false)
-        {
-            (string source, string expectedPartial) = GetSourceExpectedGenerated(isStatic, returnType, proxyIsGlobal, invokers, methodName, attributeConstructorParams, partialDeclarationParams, generateNullableReferenceTypes);
-            return GeneratedSourceTestAsync(source, expectedPartial);
-        }
-
-        private static Task GeneratedSourceTestAsync(string source, string expectedPartial)
-        {
-            const string analyserAttributeProxyAttributeSource =
-"""
-using System;
-using Microsoft.CodeAnalysis;
-
-namespace AnalyserAttributeProxy
-{
-    [AttributeUsage(AttributeTargets.Class), Embedded]
-    internal sealed class AnalyserAttributeProxyAttribute : Attribute
-    {
-        public AnalyserAttributeProxyAttribute(Type proxiedAttributeType, Type returnType, string methodName = "GetFromProxiedCtor", bool generateNullableReferenceTypes = false)
-        {
-            
-        }
-    }
-}
-""";
-            var sourceGenTest = new SourceGenVerifier.Test()
-            {
-                TestState =
-                {
-                    Sources = { source },
-                    AdditionalReferences =
-                    {
-                        MetadataReferenceFromType.CreateFromType<AttributeData>(),
-                        MetadataReferenceFromType.CreateFromType<AttributeArgumentSyntax>(),
-                    },
-                    ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
-                },
-            };
-
-            // although the matching of generated is independent of order, if there is another error it is reporting sources in the wrong order.
-            sourceGenTest.TestState.GeneratedSources.AddEmbeddedAttribute<ProxyGenerator>();
-            sourceGenTest.TestState.GeneratedSources.Add((typeof(ProxyGenerator), "AnalyserAttributeProxyAttribute.g.cs", SourceText.From(analyserAttributeProxyAttributeSource, Encoding.UTF8)));
-            sourceGenTest.TestState.GeneratedSources.Add((typeof(ProxyGenerator), "Proxy.g.cs", SourceText.From(expectedPartial, Encoding.UTF8)));
-            return sourceGenTest.RunAsync();
-        }
-
         private static string GetSource(
             bool isStatic,
             string returnType,
@@ -409,7 +362,11 @@ namespace AnalyserAttributeProxy
             string namespaceEnd = string.Empty;
             if (!string.IsNullOrEmpty(proxyNamespace))
             {
-                namespaceStart = $"namespace {proxyNamespace} {{";
+                namespaceStart =
+$$"""
+namespace {{proxyNamespace}}
+{
+""";
                 namespaceEnd = "}";
             }
 
@@ -459,9 +416,16 @@ public enum AnEnum {}
             string staticKeyword = isStatic ? "static " : string.Empty;
             string genMethodName = string.IsNullOrEmpty(methodName) ? ProxyGenerator.DefaultGeneratedMethodName : methodName;
             string partialDeclarations = PartialMethodDeclarationsBuilder.Build([.. partialDeclarationParams.Select(ctorParams => $"    private {staticKeyword}partial {returnType} {{|CS8795:{genMethodName}|}}({ctorParams});")]);
+            string namespaceStart = string.Empty;
+            string namespaceEnd = string.Empty;
             if (!string.IsNullOrEmpty(proxyNamespace))
             {
-                proxyNamespace = $"namespace {proxyNamespace};";
+                namespaceStart =
+$$"""
+namespace {{proxyNamespace}}
+{
+""";
+                namespaceEnd = "}";
             }
 
             return
@@ -474,7 +438,7 @@ using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-{{proxyNamespace}}
+{{namespaceStart}}
 
 {{staticKeyword}}partial class Proxy
 {
@@ -512,6 +476,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
     private static T[] GetArray<T>(object array)
         => ((object[])array).Cast<T>().ToArray();
 }
+
+{{namespaceEnd}}
 """;
         }
 
@@ -529,6 +495,64 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
             return new(
                 GetSource(isStatic, returnType, proxyNamespace, methodName, generateNullableReferenceTypes, attributeConstructorParams),
                 GetExpectedGenerated(isStatic, returnType, proxyNamespace, invokers, methodName, partialDeclarationParams));
+        }
+
+        private static Task GeneratedSourceTestAsync(
+            bool isStatic,
+            string returnType,
+            bool proxyIsGlobal,
+            string invokers,
+            string methodName,
+            string[] attributeConstructorParams,
+            string[] partialDeclarationParams,
+            bool generateNullableReferenceTypes = false,
+            LanguageVersion languageVersion = LanguageVersion.Default,
+            bool nullableEnabled = true)
+        {
+            (string source, string expectedPartial) = GetSourceExpectedGenerated(isStatic, returnType, proxyIsGlobal, invokers, methodName, attributeConstructorParams, partialDeclarationParams, generateNullableReferenceTypes);
+            return GeneratedSourceTestAsync(source, expectedPartial, languageVersion, nullableEnabled);
+        }
+
+        private static Task GeneratedSourceTestAsync(string source, string expectedPartial, LanguageVersion languageVersion, bool nullableEnabled)
+        {
+            const string analyserAttributeProxyAttributeSource =
+"""
+using System;
+using Microsoft.CodeAnalysis;
+
+namespace AnalyserAttributeProxy
+{
+    [AttributeUsage(AttributeTargets.Class), Embedded]
+    internal sealed class AnalyserAttributeProxyAttribute : Attribute
+    {
+        public AnalyserAttributeProxyAttribute(Type proxiedAttributeType, Type returnType, string methodName = "GetFromProxiedCtor", bool generateNullableReferenceTypes = false)
+        {
+            
+        }
+    }
+}
+""";
+            var sourceGenTest = new SourceGenVerifier.Test()
+            {
+                LanguageVersion = languageVersion,
+                NullableEnabled = nullableEnabled,
+                TestState =
+                {
+                    Sources = { source },
+                    AdditionalReferences =
+                    {
+                        MetadataReferenceFromType.CreateFromType<AttributeData>(),
+                        MetadataReferenceFromType.CreateFromType<AttributeArgumentSyntax>(),
+                    },
+                    ReferenceAssemblies = ReferenceAssemblies.Net.Net100,
+                },
+            };
+
+            // although the matching of generated is independent of order, if there is another error it is reporting sources in the wrong order.
+            sourceGenTest.TestState.GeneratedSources.AddEmbeddedAttribute<ProxyGenerator>();
+            sourceGenTest.TestState.GeneratedSources.Add((typeof(ProxyGenerator), "AnalyserAttributeProxyAttribute.g.cs", SourceText.From(analyserAttributeProxyAttributeSource, Encoding.UTF8)));
+            sourceGenTest.TestState.GeneratedSources.Add((typeof(ProxyGenerator), "Proxy.g.cs", SourceText.From(expectedPartial, Encoding.UTF8)));
+            return sourceGenTest.RunAsync();
         }
 
         private sealed record SourceExpectedGenerated(string Source, string ExpectedGenerated);
