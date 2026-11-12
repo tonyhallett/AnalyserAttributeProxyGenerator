@@ -214,7 +214,7 @@ $$"""
 $$"""
         var invokers = new Dictionary<string, Func<object[], string>>
         {
-           {"{{elementType}}[]", values => GetFromProxiedCtor(({{elementType}}[])values[0])},
+           {"{{elementType}}[]", values => GetFromProxiedCtor(GetArray<{{elementType}}>(values[0]))},
         };
 """;
             string[] args = [$"{elementType}[] array"];
@@ -235,7 +235,7 @@ $$"""
 """
         var invokers = new Dictionary<string, Func<object[], string>>
         {
-           {"string[]", values => GetFromProxiedCtor((string[])(values[0]))},
+           {"string[]", values => GetFromProxiedCtor(GetArray<string>(values[0]))},
         };
 """;
             return GeneratedSourceTestAsync(
@@ -481,6 +481,8 @@ $$"""
 
         return typedConstant.Value;
     }
+
+    private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
 }
 """ :
 $$"""
@@ -516,6 +518,8 @@ $$"""
 
         return typedConstant.Value;
     }
+
+    private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
 }
 """;
 

@@ -95,7 +95,7 @@ partial class Proxy
            {"System.Type", values => GetFromProxiedCtor((ITypeSymbol)values[0])},
            {"System.DayOfWeek", values => GetFromProxiedCtor((System.DayOfWeek)values[0])},
            {"object", values => GetFromProxiedCtor((object)values[0])},
-           {"string[]", values => GetFromProxiedCtor((string[])values[0])},
+           {"string[]", values => GetFromProxiedCtor(GetArray<string>(values[0]))},
         };
         return invokers[overload](attributeData.ConstructorArguments.Select(GetValue).ToArray());
     }
@@ -114,6 +114,8 @@ partial class Proxy
 
         return typedConstant.Value;
     }
+
+    private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
 }
 ```
 

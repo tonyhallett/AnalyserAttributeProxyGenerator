@@ -130,6 +130,8 @@ Encoding.UTF8));
 
         return typedConstant.Value;
     }
+
+    private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
 }
 """;
                     string namespaceEnd = string.Empty;
@@ -181,7 +183,17 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
                         return ConstructorParametersCommaDelimitingBuilder(
                             $"           {{\"{lookupKey}\", values => {generatedMethodName}(",
                             constructorParameters,
-                            (sb, pType, i, _) => sb.Append($"({pType})values[{i}]"))
+                            (sb, pType, i, _) =>
+                            {
+                                if (pType.EndsWith("[]", StringComparison.InvariantCulture))
+                                {
+                                    sb.Append($"GetArray<{pType[..^2]}>(values[{i}])");
+                                }
+                                else
+                                {
+                                    sb.Append($"({pType})values[{i}]");
+                                }
+                            })
                             .Append(")},").ToString();
                     }
 
