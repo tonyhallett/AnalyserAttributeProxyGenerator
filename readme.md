@@ -1,13 +1,18 @@
 ﻿# AnalyzerAttributeProxyGenerator
 
-A Source generator that generates private partial declaring methods with the same or similar arguments as the constructors of a specified attribute with return type that you specify.
+A Source generator that generates partial declaring methods with the same or similar arguments as the constructors of a specified attribute.
+
+If your project is using C# 9 or higher then the generated partial methods will be private and have a return type that you specify.
+It is an error to not implement such methods.
+
+Below C# 9 the generated partial methods are void and for every generated method you should implement and from the body set the private returnValue variable.
 
 The generator is to be used for attributes applied for reading by an analyzer as the public generated method takes `AttributeData` as a parameter and will invoke the corresponding partial implementing proxy constructor method.
 
 e.g with return type string
 `public string GetFromProxiedCtor(AttributeData attributeData)`
 
-## Example
+## Example C# 9
 
 Given an attribute
 
@@ -80,17 +85,17 @@ partial class Proxy
 
     public string GetFromProxiedCtor(AttributeData attributeData)
     {
-        var attribute = (AttributeSyntax)attributeData.ApplicationSyntaxReference!.GetSyntax();
-        arguments = attribute.ArgumentList!.Arguments;
-        IMethodSymbol ctor = attributeData.AttributeConstructor!;
+        var attribute = (AttributeSyntax)attributeData.ApplicationSyntaxReference.GetSyntax();
+        arguments = attribute.ArgumentList.Arguments;
+        IMethodSymbol ctor = attributeData.AttributeConstructor;
         var overload = string.Join(",", ctor.Parameters.Select(p => p.Type.ToDisplayString()));
-        var invokers = new Dictionary<string, Func<object?[], string>>
+        var invokers = new Dictionary<string, Func<object[], string>>
         {
-           {"int,string,bool", values => GetFromProxiedCtor((int)values[0]!, (string)values[1]!, (bool)values[2]!)},
-           {"System.Type", values => GetFromProxiedCtor((ITypeSymbol)values[0]!)},
-           {"System.DayOfWeek", values => GetFromProxiedCtor((System.DayOfWeek)values[0]!)},
-           {"object", values => GetFromProxiedCtor((object)values[0]!)},
-           {"string[]", values => GetFromProxiedCtor(GetArray<string>(values[0]!))},
+           {"int,string,bool", values => GetFromProxiedCtor((int)values[0], (string)values[1], (bool)values[2])},
+           {"System.Type", values => GetFromProxiedCtor((ITypeSymbol)values[0])},
+           {"System.DayOfWeek", values => GetFromProxiedCtor((System.DayOfWeek)values[0])},
+           {"object", values => GetFromProxiedCtor((object)values[0])},
+           {"string[]", values => GetFromProxiedCtor((string[])values[0])},
         };
         return invokers[overload](attributeData.ConstructorArguments.Select(GetValue).ToArray());
     }
@@ -109,12 +114,6 @@ partial class Proxy
 
         return typedConstant.Value;
     }
-
-    private static T[]? GetOptionalArray<T>(object? array)
-        => array == null ? null : GetArray<T>(array);
-
-    private static T[] GetArray<T>(object array)
-        => ((object[])array).Cast<T>().ToArray();
 }
 ```
 

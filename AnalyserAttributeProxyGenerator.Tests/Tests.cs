@@ -11,18 +11,14 @@ namespace AnalyserAttributeProxyGenerator.Tests
 {
     internal sealed class Tests
     {
-        [TestCase(LanguageVersion.Default, true)]
-        [TestCase(LanguageVersion.Default, false)]
-
-        // cannot have true for 7.3.
-        [TestCase(LanguageVersion.CSharp7_3, false)]
-        public Task Should_Generate_Non_Static(LanguageVersion languageVersion, bool nullableEnabled)
+        [Test]
+        public Task Should_Generate_Non_Static()
         {
             const string expectedInvokers =
 """
-        var invokers = new Dictionary<string, Func<object?[], string>>
+        var invokers = new Dictionary<string, Func<object[], string>>
         {
-           {"string", values => GetFromProxiedCtor((string)values[0]!)},
+           {"string", values => GetFromProxiedCtor((string)values[0])},
         };
 """;
             string[] args = ["string name"];
@@ -34,8 +30,30 @@ namespace AnalyserAttributeProxyGenerator.Tests
                 string.Empty,
                 args,
                 args,
-                languageVersion: languageVersion,
-                nullableEnabled: nullableEnabled);
+                languageVersion: LanguageVersion.CSharp9);
+        }
+
+        [Test]
+        public Task Should_Generate_Non_Static_Pre_CSharp9()
+        {
+            const string expectedInvokers =
+"""
+        var invokers = new Dictionary<string, Action<object[]>>
+        {
+           {"string", values => GetFromProxiedCtor((string)values[0])},
+        };
+""";
+            string[] args = ["string name"];
+            return GeneratedSourceTestAsync(
+                false,
+                "string",
+                false,
+                expectedInvokers,
+                string.Empty,
+                args,
+                args,
+                languageVersion: LanguageVersion.CSharp7_3,
+                nullableEnabled: false);
         }
 
         [Test]
@@ -43,9 +61,9 @@ namespace AnalyserAttributeProxyGenerator.Tests
         {
             const string expectedInvokers =
 """
-        var invokers = new Dictionary<string, Func<object?[], bool>>
+        var invokers = new Dictionary<string, Func<object[], bool>>
         {
-           {"string", values => GetFromProxiedCtor((string)values[0]!)},
+           {"string", values => GetFromProxiedCtor((string)values[0])},
         };
 """;
             string[] args = ["string name"];
@@ -64,9 +82,9 @@ namespace AnalyserAttributeProxyGenerator.Tests
         {
             const string expectedInvokers =
 """
-        var invokers = new Dictionary<string, Func<object?[], string>>
+        var invokers = new Dictionary<string, Func<object[], string>>
         {
-           {"string", values => MyGen((string)values[0]!)},
+           {"string", values => MyGen((string)values[0])},
         };
 """;
             string[] args = ["string name"];
@@ -85,9 +103,9 @@ namespace AnalyserAttributeProxyGenerator.Tests
         {
             const string expectedInvokers =
 """
-        var invokers = new Dictionary<string, Func<object?[], bool>>
+        var invokers = new Dictionary<string, Func<object[], bool>>
         {
-           {"string", values => GetFromProxiedCtor((string)values[0]!)},
+           {"string", values => GetFromProxiedCtor((string)values[0])},
         };
 """;
             string[] args = ["string name"];
@@ -107,9 +125,9 @@ namespace AnalyserAttributeProxyGenerator.Tests
         {
             string expectedInvokers =
 $$"""
-        var invokers = new Dictionary<string, Func<object?[], string>>
+        var invokers = new Dictionary<string, Func<object[], string>>
         {
-           {"{{primitive}}", values => GetFromProxiedCtor(({{primitive}})values[0]!)},
+           {"{{primitive}}", values => GetFromProxiedCtor(({{primitive}})values[0])},
         };
 """;
             string[] args = [$"{primitive} primitive"];
@@ -129,9 +147,9 @@ $$"""
         {
             const string expectedInvokers =
 """
-        var invokers = new Dictionary<string, Func<object?[], string>>
+        var invokers = new Dictionary<string, Func<object[], string>>
         {
-           {"AnEnum", values => GetFromProxiedCtor((AnEnum)values[0]!)},
+           {"AnEnum", values => GetFromProxiedCtor((AnEnum)values[0])},
         };
 """;
             string[] args = ["AnEnum anEnum"];
@@ -151,9 +169,9 @@ $$"""
         {
             const string expectedInvokers =
 """
-        var invokers = new Dictionary<string, Func<object?[], string>>
+        var invokers = new Dictionary<string, Func<object[], string>>
         {
-           {"object", values => GetFromProxiedCtor((object)values[0]!)},
+           {"object", values => GetFromProxiedCtor((object)values[0])},
         };
 """;
             string[] args = ["object obj"];
@@ -172,9 +190,9 @@ $$"""
         {
             const string expectedInvokers =
 """
-        var invokers = new Dictionary<string, Func<object?[], string>>
+        var invokers = new Dictionary<string, Func<object[], string>>
         {
-           {"object", values => GetFromProxiedCtor((object?)values[0])},
+           {"object", values => GetFromProxiedCtor((object)values[0])},
         };
 """;
             return GeneratedSourceTestAsync(
@@ -194,9 +212,9 @@ $$"""
         {
             string expectedInvokers =
 $$"""
-        var invokers = new Dictionary<string, Func<object?[], string>>
+        var invokers = new Dictionary<string, Func<object[], string>>
         {
-           {"{{elementType}}[]", values => GetFromProxiedCtor(GetArray<{{elementType}}>(values[0]!))},
+           {"{{elementType}}[]", values => GetFromProxiedCtor(({{elementType}}[])values[0])},
         };
 """;
             string[] args = [$"{elementType}[] array"];
@@ -215,9 +233,9 @@ $$"""
         {
             const string expectedInvokers =
 """
-        var invokers = new Dictionary<string, Func<object?[], string>>
+        var invokers = new Dictionary<string, Func<object[], string>>
         {
-           {"string[]", values => GetFromProxiedCtor(GetOptionalArray<string?>(values[0]))},
+           {"string[]", values => GetFromProxiedCtor((string[])(values[0]))},
         };
 """;
             return GeneratedSourceTestAsync(
@@ -236,9 +254,9 @@ $$"""
         {
             const string expectedInvokers =
 """
-        var invokers = new Dictionary<string, Func<object?[], string>>
+        var invokers = new Dictionary<string, Func<object[], string>>
         {
-           {"System.Type", values => MyGen((ITypeSymbol)values[0]!)},
+           {"System.Type", values => MyGen((ITypeSymbol)values[0])},
         };
 """;
             return GeneratedSourceTestAsync(
@@ -256,9 +274,9 @@ $$"""
         {
             const string expectedInvokers =
 """
-        var invokers = new Dictionary<string, Func<object?[], string>>
+        var invokers = new Dictionary<string, Func<object[], string>>
         {
-           {"System.Type", values => MyGen((ITypeSymbol?)values[0])},
+           {"System.Type", values => MyGen((ITypeSymbol)values[0])},
         };
 """;
             return GeneratedSourceTestAsync(
@@ -277,9 +295,9 @@ $$"""
         {
             const string expectedInvokers =
 """
-        var invokers = new Dictionary<string, Func<object?[], string>>
+        var invokers = new Dictionary<string, Func<object[], string>>
         {
-           {"string", values => MyGen((string?)values[0])},
+           {"string", values => MyGen((string)values[0])},
         };
 """;
             return GeneratedSourceTestAsync(
@@ -298,10 +316,10 @@ $$"""
         {
             const string expectedInvokers =
 """
-        var invokers = new Dictionary<string, Func<object?[], string>>
+        var invokers = new Dictionary<string, Func<object[], string>>
         {
-           {"string", values => GetFromProxiedCtor((string)values[0]!)},
-           {"bool", values => GetFromProxiedCtor((bool)values[0]!)},
+           {"string", values => GetFromProxiedCtor((string)values[0])},
+           {"bool", values => GetFromProxiedCtor((bool)values[0])},
         };
 """;
             string[] args = ["string name", "bool flag"];
@@ -320,9 +338,9 @@ $$"""
         {
             const string expectedInvokers =
 """
-        var invokers = new Dictionary<string, Func<object?[], string>>
+        var invokers = new Dictionary<string, Func<object[], string>>
         {
-           {"string,bool", values => GetFromProxiedCtor((string)values[0]!, (bool)values[1]!)},
+           {"string,bool", values => GetFromProxiedCtor((string)values[0], (bool)values[1])},
         };
 """;
             string[] args = ["string name, bool flag"];
@@ -341,9 +359,9 @@ $$"""
         {
             const string expectedInvokers =
 """
-        var invokers = new Dictionary<string, Func<object?[], string>>
+        var invokers = new Dictionary<string, Func<object[], string>>
         {
-           {"string", values => GetFromProxiedCtor((string)values[0]!)},
+           {"string", values => GetFromProxiedCtor((string)values[0])},
         };
 """;
             string[] args = ["string name"];
@@ -411,11 +429,15 @@ public enum AnEnum {}
             string proxyNamespace,
             string invokers,
             string methodName,
-            params string[] partialDeclarationParams)
+            string[] partialDeclarationParams,
+            bool languageVersion9OrHigher)
         {
             string staticKeyword = isStatic ? "static " : string.Empty;
             string genMethodName = string.IsNullOrEmpty(methodName) ? ProxyGenerator.DefaultGeneratedMethodName : methodName;
-            string partialDeclarations = PartialMethodDeclarationsBuilder.Build([.. partialDeclarationParams.Select(ctorParams => $"    private {staticKeyword}partial {returnType} {{|CS8795:{genMethodName}|}}({ctorParams});")]);
+            string privateKeyword = languageVersion9OrHigher ? "private " : string.Empty;
+            string declarationReturnType = languageVersion9OrHigher ? returnType : "void";
+            string markedMethodName = languageVersion9OrHigher ? $"{{|CS8795:{genMethodName}|}}" : genMethodName;
+            string partialDeclarations = PartialMethodDeclarationsBuilder.Build([.. partialDeclarationParams.Select(ctorParams => $"    {privateKeyword}{staticKeyword}partial {declarationReturnType} {markedMethodName}({ctorParams});")]);
             string namespaceStart = string.Empty;
             string namespaceEnd = string.Empty;
             if (!string.IsNullOrEmpty(proxyNamespace))
@@ -428,18 +450,8 @@ namespace {{proxyNamespace}}
                 namespaceEnd = "}";
             }
 
-            return
+            string partialClass = languageVersion9OrHigher ?
 $$"""
-// <auto-generated/>
-#nullable enable
-using System;
-using System.Linq;
-using System.Collections.Generic;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-
-{{namespaceStart}}
-
 {{staticKeyword}}partial class Proxy
 {
     private {{staticKeyword}}SeparatedSyntaxList<AttributeArgumentSyntax> arguments;
@@ -447,15 +459,15 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 {{partialDeclarations}}
     public {{staticKeyword}}{{returnType}} {{genMethodName}}(AttributeData attributeData)
     {
-        var attribute = (AttributeSyntax)attributeData.ApplicationSyntaxReference!.GetSyntax();
-        arguments = attribute.ArgumentList!.Arguments;
-        IMethodSymbol ctor = attributeData.AttributeConstructor!;
+        var attribute = (AttributeSyntax)attributeData.ApplicationSyntaxReference.GetSyntax();
+        arguments = attribute.ArgumentList.Arguments;
+        IMethodSymbol ctor = attributeData.AttributeConstructor;
         var overload = string.Join(",", ctor.Parameters.Select(p => p.Type.ToDisplayString()));
 {{invokers}}
         return invokers[overload](attributeData.ConstructorArguments.Select(GetValue).ToArray());
     }
 
-    private static object? GetValue(TypedConstant typedConstant)
+    private static object GetValue(TypedConstant typedConstant)
     {
         if (typedConstant.IsNull)
         {
@@ -469,13 +481,56 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
         return typedConstant.Value;
     }
-
-    private static T[]? GetOptionalArray<T>(object? array)
-        => array == null ? null : GetArray<T>(array);
-
-    private static T[] GetArray<T>(object array)
-        => ((object[])array).Cast<T>().ToArray();
 }
+""" :
+$$"""
+{{staticKeyword}}partial class Proxy
+{
+    private {{returnType}} returnValue;
+
+    private {{staticKeyword}}SeparatedSyntaxList<AttributeArgumentSyntax> arguments;
+
+{{partialDeclarations}}
+    public {{staticKeyword}}{{returnType}} {{genMethodName}}(AttributeData attributeData)
+    {
+        var attribute = (AttributeSyntax)attributeData.ApplicationSyntaxReference.GetSyntax();
+        arguments = attribute.ArgumentList.Arguments;
+        IMethodSymbol ctor = attributeData.AttributeConstructor;
+        var overload = string.Join(",", ctor.Parameters.Select(p => p.Type.ToDisplayString()));
+{{invokers}}
+        invokers[overload](attributeData.ConstructorArguments.Select(GetValue).ToArray());
+        return returnValue;
+    }
+
+    private static object GetValue(TypedConstant typedConstant)
+    {
+        if (typedConstant.IsNull)
+        {
+            return null;
+        }
+
+        if (typedConstant.Kind == TypedConstantKind.Array)
+        {
+            return typedConstant.Values.Select(GetValue).ToArray();
+        }
+
+        return typedConstant.Value;
+    }
+}
+""";
+
+            return
+$$"""
+// <auto-generated/>
+using System;
+using System.Linq;
+using System.Collections.Generic;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+
+{{namespaceStart}}
+
+{{partialClass}}
 
 {{namespaceEnd}}
 """;
@@ -489,12 +544,13 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
             string methodName,
             string[] attributeConstructorParams,
             string[] partialDeclarationParams,
-            bool generateNullableReferenceTypes = false)
+            bool generateNullableReferenceTypes = false,
+            bool languageVersion9OrHigher = false)
         {
             string proxyNamespace = proxyIsGlobal ? string.Empty : "SourceNs";
             return new(
                 GetSource(isStatic, returnType, proxyNamespace, methodName, generateNullableReferenceTypes, attributeConstructorParams),
-                GetExpectedGenerated(isStatic, returnType, proxyNamespace, invokers, methodName, partialDeclarationParams));
+                GetExpectedGenerated(isStatic, returnType, proxyNamespace, invokers, methodName, partialDeclarationParams, languageVersion9OrHigher));
         }
 
         private static Task GeneratedSourceTestAsync(
@@ -506,10 +562,19 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
             string[] attributeConstructorParams,
             string[] partialDeclarationParams,
             bool generateNullableReferenceTypes = false,
-            LanguageVersion languageVersion = LanguageVersion.Default,
+            LanguageVersion languageVersion = LanguageVersion.CSharp14,
             bool nullableEnabled = true)
         {
-            (string source, string expectedPartial) = GetSourceExpectedGenerated(isStatic, returnType, proxyIsGlobal, invokers, methodName, attributeConstructorParams, partialDeclarationParams, generateNullableReferenceTypes);
+            (string source, string expectedPartial) = GetSourceExpectedGenerated(
+                isStatic,
+                returnType,
+                proxyIsGlobal,
+                invokers,
+                methodName,
+                attributeConstructorParams,
+                partialDeclarationParams,
+                generateNullableReferenceTypes,
+                languageVersion >= LanguageVersion.CSharp9);
             return GeneratedSourceTestAsync(source, expectedPartial, languageVersion, nullableEnabled);
         }
 

@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis.CSharp;
 
 namespace AnalyserAttributeProxyGenerator.IntegrationTests
 {
-    internal class Tests
+    internal sealed class Tests
     {
         [Test]
         public Task Should_Work_With_Multiple_Primitive_Parameter_Types()
