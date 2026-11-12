@@ -32,6 +32,10 @@ namespace AnalyserAttributeProxyGenerator.IntegrationTests
         public Task Should_Work_With_Parameter_Type_StringArray()
             => AssertGetFromProxiedCtorAsync("new string[]{ \"a\", \"b\", \"c\"}", "a,b,c");
 
+        [Test]
+        public Task Should_Work_With_Parameter_Type_Type_Null()
+            => AssertGetFromProxiedCtorAsync("(System.Type)null", "null");
+
         private static async Task AssertGetFromProxiedCtorAsync(string attributeArguments, string expected)
         {
             IEnumerable<PortableExecutableReference> references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)

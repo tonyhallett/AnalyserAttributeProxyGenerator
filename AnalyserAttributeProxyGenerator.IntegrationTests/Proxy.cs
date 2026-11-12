@@ -9,7 +9,7 @@ namespace AnalyserAttributeProxyGenerator.IntegrationTests
 #pragma warning disable CA1822 // Mark members as static
         private partial string GetFromProxiedCtor(int i, string str, bool b) => $"i: {i}, str: {str}, b: {b}";
 
-        private partial string GetFromProxiedCtor(ITypeSymbol type) => type.Name;
+        private partial string GetFromProxiedCtor(ITypeSymbol type) => type == null ? "null" : type.Name;
 
         private partial string GetFromProxiedCtor(System.DayOfWeek dayOfWeek) => $"DayOfWeek {dayOfWeek}";
 
