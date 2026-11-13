@@ -119,6 +119,7 @@ $$"""
 {{privateVariable}}
 #nullable disable
 
+
 """;
                         }
                         else
@@ -199,9 +200,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 {{namespaceStart}}
-
 {{classSource}}
-
 {{namespaceEnd}}
 """;
 

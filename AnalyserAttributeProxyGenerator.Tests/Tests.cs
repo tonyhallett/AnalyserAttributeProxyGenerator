@@ -26,7 +26,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace SourceNs
 {
-
 partial class Proxy
 {
     private SeparatedSyntaxList<AttributeArgumentSyntax> arguments;
@@ -63,7 +62,6 @@ partial class Proxy
 
     private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
 }
-
 }
 """;
             return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp9, false);
@@ -84,7 +82,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace SourceNs
 {
-
 partial class Proxy
 {
     private string returnValue;
@@ -124,7 +121,6 @@ partial class Proxy
 
     private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
 }
-
 }
 """;
             return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp7_3, false);
@@ -145,7 +141,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace SourceNs
 {
-
 static partial class Proxy
 {
     private static SeparatedSyntaxList<AttributeArgumentSyntax> arguments;
@@ -182,7 +177,6 @@ static partial class Proxy
 
     private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
 }
-
 }
 """;
             return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp9, false);
@@ -203,7 +197,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace SourceNs
 {
-
 partial class Proxy
 {
     private SeparatedSyntaxList<AttributeArgumentSyntax> arguments;
@@ -240,7 +233,6 @@ partial class Proxy
 
     private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
 }
-
 }
 """;
             return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp9, false);
@@ -266,7 +258,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace SourceNs
 {
-
 partial class Proxy
 {
     private SeparatedSyntaxList<AttributeArgumentSyntax> arguments;
@@ -303,7 +294,6 @@ partial class Proxy
 
     private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
 }
-
 }
 """;
             return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp9, false);
@@ -325,7 +315,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace SourceNs
 {
-
 partial class Proxy
 {
     private SeparatedSyntaxList<AttributeArgumentSyntax> arguments;
@@ -362,7 +351,6 @@ partial class Proxy
 
     private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
 }
-
 }
 """;
             return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp9, false);
@@ -383,7 +371,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace SourceNs
 {
-
 partial class Proxy
 {
     private SeparatedSyntaxList<AttributeArgumentSyntax> arguments;
@@ -423,7 +410,6 @@ partial class Proxy
 
     private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
 }
-
 }
 """;
             return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp9, false);
@@ -444,7 +430,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace SourceNs
 {
-
 partial class Proxy
 {
     private SeparatedSyntaxList<AttributeArgumentSyntax> arguments;
@@ -481,7 +466,6 @@ partial class Proxy
 
     private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
 }
-
 }
 """;
             return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp9, false);
@@ -499,7 +483,6 @@ using System.Linq;
 using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-
 
 
 partial class Proxy
@@ -539,7 +522,6 @@ partial class Proxy
     private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
 }
 
-
 """;
             return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp9, false);
         }
@@ -560,7 +542,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace SourceNs
 {
-
 partial class Proxy
 {
     private SeparatedSyntaxList<AttributeArgumentSyntax> arguments;
@@ -597,7 +578,6 @@ partial class Proxy
 
     private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
 }
-
 }
 """;
             return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp9, false);
@@ -618,7 +598,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace SourceNs
 {
-
 partial class Proxy
 {
     private SeparatedSyntaxList<AttributeArgumentSyntax> arguments;
@@ -659,7 +638,6 @@ partial class Proxy
 
     private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
 }
-
 }
 """;
             return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp9, false);
@@ -680,12 +658,12 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace SourceNs
 {
-
 partial class Proxy
 {
 #nullable enable
     private string? returnValue;
 #nullable disable
+
     private SeparatedSyntaxList<AttributeArgumentSyntax> arguments;
 
     partial void GetFromProxiedCtor(string name);
@@ -723,7 +701,6 @@ partial class Proxy
 
     private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
 }
-
 }
 """;
             return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp8, true);
@@ -749,7 +726,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace SourceNs
 {
-
 partial class Proxy
 {
     private SeparatedSyntaxList<AttributeArgumentSyntax> arguments;
@@ -788,7 +764,6 @@ partial class Proxy
 
     private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
 }
-
 }
 """;
             return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp9, true);
@@ -813,7 +788,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace SourceNs
 {
-
 partial class Proxy
 {
     private SeparatedSyntaxList<AttributeArgumentSyntax> arguments;
@@ -852,7 +826,6 @@ partial class Proxy
 
     private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
 }
-
 }
 """;
             return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp9, true);
