@@ -12,7 +12,7 @@ namespace AnalyserAttributeProxyGenerator.Tests
     internal sealed class Tests
     {
         [Test]
-        public Task Should_Generate_Non_Static_CSharp9()
+        public Task Should_Generate_Non_Static_CSharp10()
         {
             string source = GetSource(false, "string", false, "SourceNs", string.Empty, false, "string name");
             const string expectedGenerated =
@@ -24,8 +24,8 @@ using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace SourceNs
-{
+namespace SourceNs;
+
 partial class Proxy
 {
     private SeparatedSyntaxList<AttributeArgumentSyntax> arguments;
@@ -62,9 +62,8 @@ partial class Proxy
 
     private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
 }
-}
 """;
-            return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp9, false);
+            return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp10, false);
         }
 
         [Test]
@@ -82,45 +81,45 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace SourceNs
 {
-partial class Proxy
-{
-    private string returnValue;
-
-    private SeparatedSyntaxList<AttributeArgumentSyntax> arguments;
-
-    partial void GetFromProxiedCtor(string name);
-
-    public string GetFromProxiedCtor(AttributeData attributeData)
+    partial class Proxy
     {
-        var attribute = (AttributeSyntax)attributeData.ApplicationSyntaxReference.GetSyntax();
-        arguments = attribute.ArgumentList.Arguments;
-        IMethodSymbol ctor = attributeData.AttributeConstructor;
-        var overload = string.Join(",", ctor.Parameters.Select(p => p.Type.ToDisplayString()));
-        var invokers = new Dictionary<string, Action<object[]>>
-        {
-            {"string", values => GetFromProxiedCtor((string)values[0])},
-        };
-        invokers[overload](attributeData.ConstructorArguments.Select(GetValue).ToArray());
-        return returnValue;
-    }
+        private string returnValue;
 
-    private static object GetValue(TypedConstant typedConstant)
-    {
-        if (typedConstant.IsNull)
+        private SeparatedSyntaxList<AttributeArgumentSyntax> arguments;
+
+        partial void GetFromProxiedCtor(string name);
+
+        public string GetFromProxiedCtor(AttributeData attributeData)
         {
-            return null;
+            var attribute = (AttributeSyntax)attributeData.ApplicationSyntaxReference.GetSyntax();
+            arguments = attribute.ArgumentList.Arguments;
+            IMethodSymbol ctor = attributeData.AttributeConstructor;
+            var overload = string.Join(",", ctor.Parameters.Select(p => p.Type.ToDisplayString()));
+            var invokers = new Dictionary<string, Action<object[]>>
+            {
+                {"string", values => GetFromProxiedCtor((string)values[0])},
+            };
+            invokers[overload](attributeData.ConstructorArguments.Select(GetValue).ToArray());
+            return returnValue;
         }
 
-        if (typedConstant.Kind == TypedConstantKind.Array)
+        private static object GetValue(TypedConstant typedConstant)
         {
-            return typedConstant.Values.Select(GetValue).ToArray();
+            if (typedConstant.IsNull)
+            {
+                return null;
+            }
+
+            if (typedConstant.Kind == TypedConstantKind.Array)
+            {
+                return typedConstant.Values.Select(GetValue).ToArray();
+            }
+
+            return typedConstant.Value;
         }
 
-        return typedConstant.Value;
+        private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
     }
-
-    private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
-}
 }
 """;
             return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp7_3, false);
@@ -139,8 +138,8 @@ using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace SourceNs
-{
+namespace SourceNs;
+
 static partial class Proxy
 {
     private static SeparatedSyntaxList<AttributeArgumentSyntax> arguments;
@@ -177,9 +176,8 @@ static partial class Proxy
 
     private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
 }
-}
 """;
-            return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp9, false);
+            return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp10, false);
         }
 
         [Test]
@@ -195,8 +193,8 @@ using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace SourceNs
-{
+namespace SourceNs;
+
 partial class Proxy
 {
     private SeparatedSyntaxList<AttributeArgumentSyntax> arguments;
@@ -233,9 +231,8 @@ partial class Proxy
 
     private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
 }
-}
 """;
-            return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp9, false);
+            return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp10, false);
         }
 
         [TestCase("int")]
@@ -256,8 +253,8 @@ using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace SourceNs
-{
+namespace SourceNs;
+
 partial class Proxy
 {
     private SeparatedSyntaxList<AttributeArgumentSyntax> arguments;
@@ -294,9 +291,8 @@ partial class Proxy
 
     private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
 }
-}
 """;
-            return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp9, false);
+            return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp10, false);
         }
 
         [TestCase("string")]
@@ -313,8 +309,8 @@ using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace SourceNs
-{
+namespace SourceNs;
+
 partial class Proxy
 {
     private SeparatedSyntaxList<AttributeArgumentSyntax> arguments;
@@ -351,9 +347,8 @@ partial class Proxy
 
     private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
 }
-}
 """;
-            return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp9, false);
+            return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp10, false);
         }
 
         [Test]
@@ -369,8 +364,8 @@ using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace SourceNs
-{
+namespace SourceNs;
+
 partial class Proxy
 {
     private SeparatedSyntaxList<AttributeArgumentSyntax> arguments;
@@ -410,9 +405,8 @@ partial class Proxy
 
     private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
 }
-}
 """;
-            return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp9, false);
+            return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp10, false);
         }
 
         [Test]
@@ -428,8 +422,8 @@ using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace SourceNs
-{
+namespace SourceNs;
+
 partial class Proxy
 {
     private SeparatedSyntaxList<AttributeArgumentSyntax> arguments;
@@ -466,9 +460,8 @@ partial class Proxy
 
     private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
 }
-}
 """;
-            return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp9, false);
+            return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp10, false);
         }
 
         [Test]
@@ -483,7 +476,6 @@ using System.Linq;
 using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-
 
 partial class Proxy
 {
@@ -521,7 +513,6 @@ partial class Proxy
 
     private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
 }
-
 """;
             return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp9, false);
         }
@@ -540,8 +531,8 @@ using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace SourceNs
-{
+namespace SourceNs;
+
 partial class Proxy
 {
     private SeparatedSyntaxList<AttributeArgumentSyntax> arguments;
@@ -578,9 +569,8 @@ partial class Proxy
 
     private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
 }
-}
 """;
-            return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp9, false);
+            return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp10, false);
         }
 
         [Test]
@@ -596,8 +586,8 @@ using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace SourceNs
-{
+namespace SourceNs;
+
 partial class Proxy
 {
     private SeparatedSyntaxList<AttributeArgumentSyntax> arguments;
@@ -638,9 +628,8 @@ partial class Proxy
 
     private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
 }
-}
 """;
-            return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp9, false);
+            return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp10, false);
         }
 
         [Test]
@@ -658,49 +647,49 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace SourceNs
 {
-partial class Proxy
-{
-#nullable enable
-    private string? returnValue;
-#nullable disable
-
-    private SeparatedSyntaxList<AttributeArgumentSyntax> arguments;
-
-    partial void GetFromProxiedCtor(string name);
-
-#nullable enable
-    public string? GetFromProxiedCtor(AttributeData attributeData)
-#nullable disable
+    partial class Proxy
     {
-        var attribute = (AttributeSyntax)attributeData.ApplicationSyntaxReference.GetSyntax();
-        arguments = attribute.ArgumentList.Arguments;
-        IMethodSymbol ctor = attributeData.AttributeConstructor;
-        var overload = string.Join(",", ctor.Parameters.Select(p => p.Type.ToDisplayString()));
-        var invokers = new Dictionary<string, Action<object[]>>
-        {
-            {"string", values => GetFromProxiedCtor((string)values[0])},
-        };
-        invokers[overload](attributeData.ConstructorArguments.Select(GetValue).ToArray());
-        return returnValue;
-    }
+    #nullable enable
+        private string? returnValue;
+    #nullable disable
 
-    private static object GetValue(TypedConstant typedConstant)
-    {
-        if (typedConstant.IsNull)
+        private SeparatedSyntaxList<AttributeArgumentSyntax> arguments;
+
+        partial void GetFromProxiedCtor(string name);
+
+    #nullable enable
+        public string? GetFromProxiedCtor(AttributeData attributeData)
+    #nullable disable
         {
-            return null;
+            var attribute = (AttributeSyntax)attributeData.ApplicationSyntaxReference.GetSyntax();
+            arguments = attribute.ArgumentList.Arguments;
+            IMethodSymbol ctor = attributeData.AttributeConstructor;
+            var overload = string.Join(",", ctor.Parameters.Select(p => p.Type.ToDisplayString()));
+            var invokers = new Dictionary<string, Action<object[]>>
+            {
+                {"string", values => GetFromProxiedCtor((string)values[0])},
+            };
+            invokers[overload](attributeData.ConstructorArguments.Select(GetValue).ToArray());
+            return returnValue;
         }
 
-        if (typedConstant.Kind == TypedConstantKind.Array)
+        private static object GetValue(TypedConstant typedConstant)
         {
-            return typedConstant.Values.Select(GetValue).ToArray();
+            if (typedConstant.IsNull)
+            {
+                return null;
+            }
+
+            if (typedConstant.Kind == TypedConstantKind.Array)
+            {
+                return typedConstant.Values.Select(GetValue).ToArray();
+            }
+
+            return typedConstant.Value;
         }
 
-        return typedConstant.Value;
+        private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
     }
-
-    private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
-}
 }
 """;
             return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp8, true);
@@ -724,8 +713,8 @@ using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace SourceNs
-{
+namespace SourceNs;
+
 partial class Proxy
 {
     private SeparatedSyntaxList<AttributeArgumentSyntax> arguments;
@@ -764,9 +753,8 @@ partial class Proxy
 
     private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
 }
-}
 """;
-            return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp9, true);
+            return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp10, true);
         }
 
         [TestCase("string", true)]
@@ -786,8 +774,8 @@ using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace SourceNs
-{
+namespace SourceNs;
+
 partial class Proxy
 {
     private SeparatedSyntaxList<AttributeArgumentSyntax> arguments;
@@ -826,9 +814,8 @@ partial class Proxy
 
     private static T[] GetArray<T>(object array) => ((object[])array).Cast<T>().ToArray();
 }
-}
 """;
-            return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp9, true);
+            return GeneratedSourceTestAsync(source, expectedGenerated, LanguageVersion.CSharp10, true);
         }
 
         private static string GetSource(
