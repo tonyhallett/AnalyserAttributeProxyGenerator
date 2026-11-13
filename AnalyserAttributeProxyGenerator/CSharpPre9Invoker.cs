@@ -2,7 +2,7 @@
 {
     internal class CSharpPre9Invoker : ILanguageVersionInvoker
     {
-        public LanguageVersionInvocation Get(string returnType, string invokeCode)
+        public LanguageVersionInvocation Get(string returnType, bool returnTypeIsNullableReferenceType, string invokeCode)
             => new(
 string.Empty,
 "void",
@@ -10,7 +10,7 @@ $$"""
 {{invokeCode}}
         return returnValue;
 """,
-$"    private {returnType} returnValue;",
+$"    private {returnType}{(returnTypeIsNullableReferenceType ? "?" : string.Empty)} returnValue;",
 "Action<object[]>");
     }
 }

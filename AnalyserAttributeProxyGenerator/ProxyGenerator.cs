@@ -82,13 +82,11 @@ Encoding.UTF8));
                 if (model != null)
                 {
                     ILanguageVersionInvoker languageVersionInvoker = languageVersion >= LanguageVersion.CSharp9 ? new CSharp9Invoker() : new CSharpPre9Invoker();
-                    LanguageVersionInvocation languageVersionInvocation = languageVersionInvoker.Get(model.ReturnType, "invokers[overload](attributeData.ConstructorArguments.Select(GetValue).ToArray());");
+                    LanguageVersionInvocation languageVersionInvocation = languageVersionInvoker.Get(
+                        model.ReturnType,
+                        model.ReturnTypeIsNullableReferenceType,
+                        "invokers[overload](attributeData.ConstructorArguments.Select(GetValue).ToArray());");
                     string partialDeclarationsReturnType = languageVersionInvocation.ReturnType;
-                    if (model.ReturnTypeIsNullableReferenceType)
-                    {
-                        partialDeclarationsReturnType += "?";
-                    }
-
                     string privateKeyword = languageVersionInvocation.DeclarationPrivateKeyword;
                     bool generatedNullableParameters = false;
                     bool generateNullableReferenceTypes = nullableAnnotationsEnabled && model.GenerateNullableReferenceTypes;
@@ -103,7 +101,7 @@ Encoding.UTF8));
                         stringBuilders.Append(CreateProxiedGetter(constructorParameters), CreateInvokerEntry(constructorParameters), isLast);
                     }
 
-                    bool applyNullableAnnotationToDeclarations = generatedNullableParameters || model.ReturnTypeIsNullableReferenceType;
+                    bool applyNullableAnnotationToDeclarations = generatedNullableParameters || (model.ReturnTypeIsNullableReferenceType && partialDeclarationsReturnType != "void");
                     string partialDeclarationsNullableEnable = applyNullableAnnotationToDeclarations ? "\r\n#nullable enable" : string.Empty;
                     if (applyNullableAnnotationToDeclarations)
                     {
@@ -226,7 +224,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
                     {
                         string lookupKey = string.Join(",", constructorParameters.Select(p => p.Type));
                         return ConstructorParametersCommaDelimitingBuilder(
-                            $"           {{\"{lookupKey}\", values => {generatedMethodName}(",
+                            $"            {{\"{lookupKey}\", values => {generatedMethodName}(",
                             constructorParameters,
                             (sb, pType, i, _) =>
                             {
