@@ -38,7 +38,7 @@ namespace {{AttributeNamespace}}
     [AttributeUsage(AttributeTargets.Class), Embedded]
     internal sealed class {{AnalyserAttributeProxyAttributeName}} : Attribute
     {
-        public {{AnalyserAttributeProxyAttributeName}}(Type proxiedAttributeType, Type returnType, string methodName = "{{DefaultGeneratedMethodName}}", bool generateNullableReferenceTypes = false)
+        public {{AnalyserAttributeProxyAttributeName}}(Type proxiedAttributeType, Type returnType, bool returnTypeIsNullableReferenceType = false, string methodName = "{{DefaultGeneratedMethodName}}", bool generateNullableReferenceTypes = false)
         {
             
         }
@@ -53,13 +53,22 @@ Encoding.UTF8));
                 transform: static (partialClassSymbol, _, _) =>
                 {
                     AttributeData attributeClass = GetAttributeData(partialClassSymbol);
+                    INamedTypeSymbol returnType = attributeClass.GetValue<INamedTypeSymbol>(1);
+                    string returnTypeString = returnType.ToDisplayString();
+                    bool returnTypeIsNullableReferenceType = false;
+                    if (returnType.IsReferenceType)
+                    {
+                        returnTypeIsNullableReferenceType = attributeClass.GetValue<bool>(2);
+                    }
+
                     return new ProxyAttributeModel(
                         GetNamespaceName(partialClassSymbol),
                         partialClassSymbol.Name,
                         partialClassSymbol.IsStatic,
-                        attributeClass.GetValue<INamedTypeSymbol>(1).ToDisplayString(),
-                        attributeClass.GetValue<string>(2),
-                        attributeClass.GetValue<bool>(3),
+                        returnTypeString,
+                        returnTypeIsNullableReferenceType,
+                        attributeClass.GetValue<string>(3),
+                        attributeClass.GetValue<bool>(4),
                         new ConstructorParameters(attributeClass.GetValue<INamedTypeSymbol>(0)));
                 });
 
@@ -69,14 +78,19 @@ Encoding.UTF8));
             {
                 (ProxyAttributeModel? model, Compilation compilation) = result;
                 LanguageVersion languageVersion = ((CSharpCompilation)compilation).LanguageVersion;
-                bool nullableAnnotationsEnabled = languageVersion > LanguageVersion.CSharp7_3 && compilation.Options.NullableContextOptions.AnnotationsEnabled();
+                bool nullableAnnotationsEnabled = languageVersion >= LanguageVersion.CSharp8 && compilation.Options.NullableContextOptions.AnnotationsEnabled();
                 if (model != null)
                 {
                     ILanguageVersionInvoker languageVersionInvoker = languageVersion >= LanguageVersion.CSharp9 ? new CSharp9Invoker() : new CSharpPre9Invoker();
                     LanguageVersionInvocation languageVersionInvocation = languageVersionInvoker.Get(model.ReturnType, "invokers[overload](attributeData.ConstructorArguments.Select(GetValue).ToArray());");
-                    string returnType = languageVersionInvocation.ReturnType;
+                    string partialDeclarationsReturnType = languageVersionInvocation.ReturnType;
+                    if (model.ReturnTypeIsNullableReferenceType)
+                    {
+                        partialDeclarationsReturnType += "?";
+                    }
+
                     string privateKeyword = languageVersionInvocation.DeclarationPrivateKeyword;
-                    bool generatedNullable = false;
+                    bool generatedNullableParameters = false;
                     bool generateNullableReferenceTypes = nullableAnnotationsEnabled && model.GenerateNullableReferenceTypes;
                     string generatedMethodName = model.GeneratedMethodName;
                     string staticKeyword = model.IsStatic ? "static " : string.Empty;
@@ -89,21 +103,52 @@ Encoding.UTF8));
                         stringBuilders.Append(CreateProxiedGetter(constructorParameters), CreateInvokerEntry(constructorParameters), isLast);
                     }
 
-                    string partialDeclarationsNullableEnable = generatedNullable ? "\r\n#nullable enable" : string.Empty;
-                    string partialDeclarationsNullableDisable = generatedNullable ? "\r\n#nullable disable" : string.Empty;
-                    if (generatedNullable)
+                    bool applyNullableAnnotationToDeclarations = generatedNullableParameters || model.ReturnTypeIsNullableReferenceType;
+                    string partialDeclarationsNullableEnable = applyNullableAnnotationToDeclarations ? "\r\n#nullable enable" : string.Empty;
+                    if (applyNullableAnnotationToDeclarations)
                     {
                         stringBuilders.PartialMethods.AppendLine("#nullable disable");
+                    }
+
+                    string privateVariable = languageVersionInvocation.PrivateVariable;
+                    if (privateVariable != string.Empty)
+                    {
+                        if (model.ReturnTypeIsNullableReferenceType)
+                        {
+                            privateVariable =
+$$"""
+#nullable enable
+{{privateVariable}}
+#nullable disable
+
+""";
+                        }
+                        else
+                        {
+                            privateVariable += "\r\n\r\n";
+                        }
+                    }
+
+                    string mainReturnType = model.ReturnTypeIsNullableReferenceType ? model.ReturnType + "?" : model.ReturnType;
+                    string mainSignature = $"    public {staticKeyword}{mainReturnType} {generatedMethodName}(AttributeData attributeData)";
+                    if (model.ReturnTypeIsNullableReferenceType)
+                    {
+                        mainSignature =
+$$"""
+#nullable enable
+{{mainSignature}}
+#nullable disable
+""";
                     }
 
                     string classSource =
     $$"""
 {{staticKeyword}}partial class {{model.PartialClassName}}
 {
-{{languageVersionInvocation.PrivateVariable}}    private {{staticKeyword}}SeparatedSyntaxList<AttributeArgumentSyntax> arguments;{{partialDeclarationsNullableEnable}}
-
+{{privateVariable}}    private {{staticKeyword}}SeparatedSyntaxList<AttributeArgumentSyntax> arguments;
+{{partialDeclarationsNullableEnable}}
 {{stringBuilders.PartialMethods}}
-    public {{staticKeyword}}{{model.ReturnType}} {{generatedMethodName}}(AttributeData attributeData)
+{{mainSignature}}
     {
         var attribute = (AttributeSyntax)attributeData.ApplicationSyntaxReference.GetSyntax();
         arguments = attribute.ArgumentList.Arguments;
@@ -172,7 +217,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
                             (sb, pType, _, parameter) => sb.Append($"{GetParameterType(pType)} {parameter.Name}"));
                         return
     $$"""
-    {{privateKeyword}}{{staticKeyword}}partial {{returnType}} {{generatedMethodName}}({{sb}});
+    {{privateKeyword}}{{staticKeyword}}partial {{partialDeclarationsReturnType}} {{generatedMethodName}}({{sb}});
 
 """;
                     }
@@ -227,13 +272,13 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
                         if (parameterType.EndsWith("[]", StringComparison.InvariantCulture))
                         {
-                            generatedNullable = true;
+                            generatedNullableParameters = true;
                             return GetParameterType(parameterType[..^2]) + "[]?";
                         }
 
                         if (_referenceTypes.Contains(parameterType))
                         {
-                            generatedNullable = true;
+                            generatedNullableParameters = true;
                             return parameterType + "?";
                         }
 
@@ -264,6 +309,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
             string PartialClassName,
             bool IsStatic,
             string ReturnType,
+            bool ReturnTypeIsNullableReferenceType,
             string GeneratedMethodName,
             bool GenerateNullableReferenceTypes,
             ConstructorParameters ConstructorParameters);

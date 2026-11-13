@@ -123,11 +123,13 @@ The `arguments` field is provided if you need to look at the syntax for the argu
 
 ## Additional arguments
 
-`public AnalyserAttributeProxyAttribute(Type proxiedAttributeType, Type returnType, string methodName = "GetFromProxiedCtor",  bool generateNullableReferenceTypes = false)`
+`public AnalyserAttributeProxyAttribute(Type proxiedAttributeType, Type returnType, bool returnTypeIsNullableReferenceType = false, string methodName = "GetFromProxiedCtor", bool generateNullableReferenceTypes = false))`
 
-Just provide a third argument to change the generated method name.
+If you require the generated return type to be nullable when a reference type then set the third argument to true.
 
-If the fourth argument is true then instead of e.g
+Provide a fourth argument to change the generated method name.
+
+If the fifth argument is true then instead of e.g
 
 `private partial string GetFromProxiedCtor(ITypeSymbol type);`
 

@@ -26,6 +26,7 @@ namespace AnalyserAttributeProxyGenerator.Tests
                 false,
                 "string",
                 false,
+                false,
                 expectedInvokers,
                 string.Empty,
                 args,
@@ -47,6 +48,7 @@ namespace AnalyserAttributeProxyGenerator.Tests
             return GeneratedSourceTestAsync(
                 false,
                 "string",
+                false,
                 false,
                 expectedInvokers,
                 string.Empty,
@@ -71,6 +73,7 @@ namespace AnalyserAttributeProxyGenerator.Tests
                 true,
                 "bool",
                 false,
+                false,
                 expectedInvokers,
                 string.Empty,
                 args,
@@ -92,6 +95,7 @@ namespace AnalyserAttributeProxyGenerator.Tests
                 false,
                 "string",
                 false,
+                false,
                 expectedInvokers,
                 "MyGen",
                 args,
@@ -112,6 +116,51 @@ namespace AnalyserAttributeProxyGenerator.Tests
             return GeneratedSourceTestAsync(
                 false,
                 "bool",
+                false,
+                false,
+                expectedInvokers,
+                string.Empty,
+                args,
+                args);
+        }
+
+        [Test]
+        public Task Should_Work_With_Nullable_Value_Type_Return_Types()
+        {
+            const string expectedInvokers =
+"""
+        var invokers = new Dictionary<string, Func<object[], int?>>
+        {
+           {"string", values => GetFromProxiedCtor((string)values[0])},
+        };
+""";
+            string[] args = ["string name"];
+            return GeneratedSourceTestAsync(
+                false,
+                "int?",
+                false,
+                false,
+                expectedInvokers,
+                string.Empty,
+                args,
+                args);
+        }
+
+        [Test]
+        public Task Should_Work_With_Nullable_Reference_Type_Return_Types()
+        {
+            const string expectedInvokers =
+"""
+        var invokers = new Dictionary<string, Func<object[], string>>
+        {
+           {"string", values => GetFromProxiedCtor((string)values[0])},
+        };
+""";
+            string[] args = ["string name"];
+            return GeneratedSourceTestAsync(
+                false,
+                "string",
+                true,
                 false,
                 expectedInvokers,
                 string.Empty,
@@ -135,6 +184,7 @@ $$"""
                 false,
                 "string",
                 false,
+                false,
                 expectedInvokers,
                 "GetFromProxiedCtor",
                 args,
@@ -156,6 +206,7 @@ $$"""
             return GeneratedSourceTestAsync(
                 false,
                 "string",
+                false,
                 false,
                 expectedInvokers,
                 "GetFromProxiedCtor",
@@ -179,6 +230,7 @@ $$"""
                 false,
                 "string",
                 false,
+                false,
                 expectedInvokers,
                 string.Empty,
                 args,
@@ -199,11 +251,13 @@ $$"""
                 false,
                 "string",
                 false,
+                false,
                 expectedInvokers,
                 "GetFromProxiedCtor",
                 ["object obj"],
                 ["object? obj"],
-                true);
+                true,
+                declarationsNullableEnable: true);
         }
 
         [TestCase("string")]
@@ -221,6 +275,7 @@ $$"""
             return GeneratedSourceTestAsync(
                 false,
                 "string",
+                false,
                 false,
                 expectedInvokers,
                 string.Empty,
@@ -242,11 +297,13 @@ $$"""
                 false,
                 "string",
                 false,
+                false,
                 expectedInvokers,
                 "GetFromProxiedCtor",
                 ["string[] arr"],
                 ["string?[]? arr"],
-                true);
+                true,
+                declarationsNullableEnable: true);
         }
 
         [Test]
@@ -262,6 +319,7 @@ $$"""
             return GeneratedSourceTestAsync(
                 false,
                 "string",
+                false,
                 false,
                 expectedInvokers,
                 "MyGen",
@@ -283,11 +341,13 @@ $$"""
                 false,
                 "string",
                 false,
+                false,
                 expectedInvokers,
                 "MyGen",
                 ["System.Type type"],
                 ["ITypeSymbol? type"],
-                true);
+                true,
+                declarationsNullableEnable: true);
         }
 
         [Test]
@@ -304,11 +364,13 @@ $$"""
                 false,
                 "string",
                 false,
+                false,
                 expectedInvokers,
                 "MyGen",
                 ["string str"],
                 ["string? str"],
-                true);
+                true,
+                declarationsNullableEnable: true);
         }
 
         [Test]
@@ -326,6 +388,7 @@ $$"""
             return GeneratedSourceTestAsync(
                 false,
                 "string",
+                false,
                 false,
                 expectedInvokers,
                 string.Empty,
@@ -348,6 +411,7 @@ $$"""
                 false,
                 "string",
                 false,
+                false,
                 expectedInvokers,
                 string.Empty,
                 args,
@@ -365,12 +429,13 @@ $$"""
         };
 """;
             string[] args = ["string name"];
-            return GeneratedSourceTestAsync(false, "string", true, expectedInvokers, string.Empty, args, args);
+            return GeneratedSourceTestAsync(false, "string", false, true, expectedInvokers, string.Empty, args, args);
         }
 
         private static string GetSource(
             bool isStatic,
             string returnType,
+            bool returnTypeIsNullableReferenceType,
             string proxyNamespace,
             string methodName,
             bool generateNullableReferenceTypes,
@@ -389,7 +454,7 @@ namespace {{proxyNamespace}}
             }
 
             string staticKeyword = isStatic ? "static " : string.Empty;
-            string attribute = $"[{ProxyGenerator.FullyQualifiedAttributeName}(typeof(AttributeNs.ProxiedAttribute), typeof({returnType})";
+            string attribute = $"[{ProxyGenerator.FullyQualifiedAttributeName}(typeof(AttributeNs.ProxiedAttribute), typeof({returnType}), {(returnTypeIsNullableReferenceType ? "true" : "false")}";
             if (string.IsNullOrEmpty(methodName))
             {
                 attribute += ")]";
@@ -426,18 +491,27 @@ public enum AnEnum {}
         private static string GetExpectedGenerated(
             bool isStatic,
             string returnType,
+            bool returnTypeIsNullableReferenceType,
             string proxyNamespace,
             string invokers,
             string methodName,
             string[] partialDeclarationParams,
-            bool languageVersion9OrHigher)
+            bool languageVersion9OrHigher,
+            bool declarationsNullableEnable = false)
         {
+            returnType = returnTypeIsNullableReferenceType ? returnType + "?" : returnType;
             string staticKeyword = isStatic ? "static " : string.Empty;
             string genMethodName = string.IsNullOrEmpty(methodName) ? ProxyGenerator.DefaultGeneratedMethodName : methodName;
+
             string privateKeyword = languageVersion9OrHigher ? "private " : string.Empty;
             string declarationReturnType = languageVersion9OrHigher ? returnType : "void";
             string markedMethodName = languageVersion9OrHigher ? $"{{|CS8795:{genMethodName}|}}" : genMethodName;
             string partialDeclarations = PartialMethodDeclarationsBuilder.Build([.. partialDeclarationParams.Select(ctorParams => $"    {privateKeyword}{staticKeyword}partial {declarationReturnType} {markedMethodName}({ctorParams});")]);
+            if (declarationsNullableEnable || returnTypeIsNullableReferenceType)
+            {
+                partialDeclarations = "#nullable enable\r\n" + partialDeclarations + "#nullable disable\r\n";
+            }
+
             string namespaceStart = string.Empty;
             string namespaceEnd = string.Empty;
             if (!string.IsNullOrEmpty(proxyNamespace))
@@ -450,6 +524,17 @@ namespace {{proxyNamespace}}
                 namespaceEnd = "}";
             }
 
+            string mainSignature = $"    public {staticKeyword}{returnType} {genMethodName}(AttributeData attributeData)";
+            if (returnTypeIsNullableReferenceType)
+            {
+                mainSignature =
+$$"""
+#nullable enable
+{{mainSignature}}
+#nullable disable
+""";
+            }
+
             string partialClass = languageVersion9OrHigher ?
 $$"""
 {{staticKeyword}}partial class Proxy
@@ -457,7 +542,7 @@ $$"""
     private {{staticKeyword}}SeparatedSyntaxList<AttributeArgumentSyntax> arguments;
 
 {{partialDeclarations}}
-    public {{staticKeyword}}{{returnType}} {{genMethodName}}(AttributeData attributeData)
+{{mainSignature}}
     {
         var attribute = (AttributeSyntax)attributeData.ApplicationSyntaxReference.GetSyntax();
         arguments = attribute.ArgumentList.Arguments;
@@ -493,7 +578,7 @@ $$"""
     private {{staticKeyword}}SeparatedSyntaxList<AttributeArgumentSyntax> arguments;
 
 {{partialDeclarations}}
-    public {{staticKeyword}}{{returnType}} {{genMethodName}}(AttributeData attributeData)
+{{mainSignature}}
     {
         var attribute = (AttributeSyntax)attributeData.ApplicationSyntaxReference.GetSyntax();
         arguments = attribute.ArgumentList.Arguments;
@@ -543,23 +628,26 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
         private static SourceExpectedGenerated GetSourceExpectedGenerated(
             bool isStatic,
             string returnType,
+            bool returnTypeIsNullableReferenceType,
             bool proxyIsGlobal,
             string invokers,
             string methodName,
             string[] attributeConstructorParams,
             string[] partialDeclarationParams,
             bool generateNullableReferenceTypes = false,
-            bool languageVersion9OrHigher = false)
+            bool languageVersion9OrHigher = false,
+            bool declarationsNullableEnable = false)
         {
             string proxyNamespace = proxyIsGlobal ? string.Empty : "SourceNs";
             return new(
-                GetSource(isStatic, returnType, proxyNamespace, methodName, generateNullableReferenceTypes, attributeConstructorParams),
-                GetExpectedGenerated(isStatic, returnType, proxyNamespace, invokers, methodName, partialDeclarationParams, languageVersion9OrHigher));
+                GetSource(isStatic, returnType, returnTypeIsNullableReferenceType, proxyNamespace, methodName, generateNullableReferenceTypes, attributeConstructorParams),
+                GetExpectedGenerated(isStatic, returnType, returnTypeIsNullableReferenceType, proxyNamespace, invokers, methodName, partialDeclarationParams, languageVersion9OrHigher, declarationsNullableEnable));
         }
 
         private static Task GeneratedSourceTestAsync(
             bool isStatic,
             string returnType,
+            bool returnTypeIsNullableReferenceType,
             bool proxyIsGlobal,
             string invokers,
             string methodName,
@@ -567,18 +655,21 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
             string[] partialDeclarationParams,
             bool generateNullableReferenceTypes = false,
             LanguageVersion languageVersion = LanguageVersion.CSharp14,
-            bool nullableEnabled = true)
+            bool nullableEnabled = true,
+            bool declarationsNullableEnable = false)
         {
             (string source, string expectedPartial) = GetSourceExpectedGenerated(
                 isStatic,
                 returnType,
+                returnTypeIsNullableReferenceType,
                 proxyIsGlobal,
                 invokers,
                 methodName,
                 attributeConstructorParams,
                 partialDeclarationParams,
                 generateNullableReferenceTypes,
-                languageVersion >= LanguageVersion.CSharp9);
+                languageVersion >= LanguageVersion.CSharp9,
+                declarationsNullableEnable: declarationsNullableEnable);
             return GeneratedSourceTestAsync(source, expectedPartial, languageVersion, nullableEnabled);
         }
 
@@ -594,7 +685,7 @@ namespace AnalyserAttributeProxy
     [AttributeUsage(AttributeTargets.Class), Embedded]
     internal sealed class AnalyserAttributeProxyAttribute : Attribute
     {
-        public AnalyserAttributeProxyAttribute(Type proxiedAttributeType, Type returnType, string methodName = "GetFromProxiedCtor", bool generateNullableReferenceTypes = false)
+        public AnalyserAttributeProxyAttribute(Type proxiedAttributeType, Type returnType, bool returnTypeIsNullableReferenceType = false, string methodName = "GetFromProxiedCtor", bool generateNullableReferenceTypes = false)
         {
             
         }

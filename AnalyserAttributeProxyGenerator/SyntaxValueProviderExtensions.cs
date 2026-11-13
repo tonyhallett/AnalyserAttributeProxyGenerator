@@ -17,7 +17,7 @@ namespace AnalyserAttributeProxyGenerator
             return syntaxValueProvider.ForAttributeWithMetadataName(
                 fullyQualifiedMetadataName,
                 static (node, _) => node is ClassDeclarationSyntax,
-                (context, _) =>
+                (context, ct) =>
                 {
                     if (!IsPartial(context))
                     {
@@ -25,7 +25,7 @@ namespace AnalyserAttributeProxyGenerator
                     }
 
                     var partialClassSymbol = (INamedTypeSymbol)context.TargetSymbol;
-                    return transform(partialClassSymbol, context, _);
+                    return transform(partialClassSymbol, context, ct);
                 });
         }
 

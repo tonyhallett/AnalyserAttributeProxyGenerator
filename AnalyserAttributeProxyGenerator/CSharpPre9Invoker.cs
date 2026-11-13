@@ -10,7 +10,7 @@ $$"""
 {{invokeCode}}
         return returnValue;
 """,
-$"    private {returnType} returnValue;\r\n\r\n",
+$"    private {returnType} returnValue;",
 "Action<object[]>");
     }
 }
